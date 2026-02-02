@@ -2,7 +2,10 @@ import ipaddress
 import re
 from urllib.parse import urlparse
 import tldextract
-
+import ssl 
+import socket
+from datetime import datetime
+'''
 def have_ip(url): # If there is IP instead of domain name, its likely someone is trying to steal personal information
     host = urlparse(url).hostname
     #print(host)
@@ -76,6 +79,12 @@ def sub_multisub_domain(url):
         #print("Phish")
     return dots_count
 
+def http_https(url):
+    if "https" in url:
+        https = 0
+    else:
+        https = 1
+    return https
 
 
 
@@ -88,10 +97,87 @@ def feature_extraction(url):
 
 
     return features
+'''
+
+'''''''TESTING'''''''
+
+url_random = "http://www.192.168.199.122.co.uk//@aaaaa/192.168.133.199/sfds565656mndasAKB1/32.php"
+url_phish1 = "https://qrco.de/bfHZzy"
+url_phish2 = "https://juegnjkwn.firebaseapp.com/"
+url_phish3 = "https://www.dropbox.com/scl/fi/xs5b6d59p6mzlxtyf6qeh/CLICK-TO-CONTINUE-SIGN-IN.paper?dl=0&rlkey=u42md1bnw846o3enf479kqcne"
+url_legit1 = "https://www.thoughtfullearning.com"
+url_legit2 = "https://www.lastbryggan.se"
+url_legit3 = "https://www.oncoguia.org.br"
+
+#domain = urlparse(url).path.count("/")
+#print("domain / -> ", domain)
+
+#ssl certificate NEED REVIEW ///// 
+'''
+def certificate_info(url):
+    host = urlparse(url).hostname
+    print("host: ", host)
+    context = ssl.create_default_context()
+    with socket.create_connection((host,443),timeout=5) as sock:    #opening a connection to the server on port 443
+        with context.wrap_socket(sock, server_hostname=host) as ssock:  #use the ssl connectio/ handshake
+            cert = ssock.getpeercert() #getting the certificate
+    print("cert: ", cert)
+    return cert
+
+def certificate_extract_features(cert):
+    issuer = dict(x[0] for x in cert["issuer"])["organizationName"] #dict of issuer
+    print("Issuer: ", issuer)
+    valid_from = datetime.strptime(cert["notBefore"], "%b %d %H:%M:%S %Y %Z")
+    print("valid_from", valid_from)
+    age_days = (datetime.utcnow() - valid_from).days
+    print("age_days: ",age_days)
+    age_years = age_days / 365
+    print("age_years: ", age_years)
+    return issuer, age_years
+
+def https_cert_url(url):
+    trusted_issuers = [
+    "DigiCert Inc",
+    "Let's Encrypt",
+    "GlobalSign",
+    "Sectigo Limited",
+    "GoDaddy.com, Inc.",
+    "Google Trust Services"
+    ]
+    try:
+        cert = certificate_info(url)
+        issuer, age_years = certificate_extract_features(cert)
+        uses_https = url.startswith("https")
+        print("uses_https: ", uses_https)
+
+        #if uses_https and issuer in trusted_issuers and age_years >= 1:
+        if uses_https and age_years >= 1:
+            cert_ok = 0
+            return "Legit"
+            print(cert_ok)
+        #elif uses_https and issuer not in trusted_issuers:
+        elif uses_https and age_years <= 1:
+            cert_ok = 2 # considered as suspicious temp
+            return "Suspicious"
+            print(cert_ok)
+        else:
+            cert_ok = 1
+            return "Phish"
+            print(cert_ok)
+    except:
+        cert_ok = 1
+        return "Phish"
+        print(cert_ok)
 
 
-url = "https://www.192.168.199.122.co.uk//@aaaaa/192.168.133.199/sfds565656mndasAKB1"
-url2 = "https://www.thoughtfullearning.com"
+print("-----------------")
+print(https_cert_url(url_phish1))
+'''
+
+
+
+
+#other 
 '''
 #ip=0
 host = urlparse(url).hostname
@@ -127,8 +213,8 @@ else:
     dash = 0
 
 print("dash: ", dash)
-'''
-parsed_url = urlparse(url) 
+
+parsed_url = urlparse(url2) 
 domain = parsed_url.netloc
 #print("domain: ", domain)
 if domain.startswith("www."):
@@ -154,4 +240,4 @@ elif dots == 2:
 else:
     dots_count = 1
     print("Phish")
-
+'''
