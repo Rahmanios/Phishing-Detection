@@ -5,6 +5,11 @@ import tldextract
 import ssl 
 import socket
 from datetime import datetime
+import whois
+import dns.resolver
+import requests
+from bs4 import BeautifulSoup
+
 '''
 def have_ip(url): # If there is IP instead of domain name, its likely someone is trying to steal personal information
     host = urlparse(url).hostname
@@ -113,7 +118,7 @@ url_legit3 = "https://www.oncoguia.org.br"
 #print("domain / -> ", domain)
 
 #ssl certificate NEED REVIEW ///// 
-'''
+
 def certificate_info(url):
     host = urlparse(url).hostname
     print("host: ", host)
@@ -172,8 +177,6 @@ def https_cert_url(url):
 
 print("-----------------")
 print(https_cert_url(url_phish1))
-'''
-
 
 
 
@@ -240,4 +243,50 @@ elif dots == 2:
 else:
     dots_count = 1
     print("Phish")
+'''
+
+#------ domain-based ------#
+##domain = whois.whois(tldextract.extract(url_phish3).registered_domain)
+##print("domain details: ",domain)
+#domain = tldextract.extract(url_phish1).registered_domain
+#print("doooomain: ", domain)
+#print("whoooois: ", whois.whois(domain))
+#print("--------------------------------------")
+'''
+def domain_expiry(url):
+    #if domain expires in <= 1 year is Phish
+    #expire_date = 0
+    try:
+        domain = whois.whois(tldextract.extract(url).registered_domain)
+        expiry_date = domain.expiration_date
+        print("TRY: expiry_date: ", expiry_date)
+        if isinstance(expiry_date, list): # if the expiry_date exist as list pick the first item
+            expiry_date = expiry_date[0]
+        today = datetime.now()
+        print("today day in if : ",today)
+        days_left = (expiry_date - today).days
+        print("days left: ", days_left)
+        if days_left >= 365:
+            expiry_date = 0 #legit
+        else:
+            expiry_date = 1 #phish
+    except:
+        expiry_date = 2 # needs to be reviewed and discussed
+    
+    print("expiry date: ", expiry_date)
+    return expiry_date
+
+domain_expiry(url_random)
+'''
+
+'''
+def get_soup(url):
+    try:
+        response = requests.get(url, timeout = 5)
+        print(BeautifulSoup(response.text, "html.parser"))
+        return BeautifulSoup(response.text, "html.parser"), response.text
+    except:
+        return None, None
+
+get_soup(url_legit1)
 '''
