@@ -4,7 +4,8 @@ from urllib.parse import urlparse
 import tldextract
 import ssl 
 import socket
-from datetime import datetime
+#import datetime
+from datetime import datetime, timezone
 import whois
 import dns.resolver
 import requests
@@ -113,28 +114,54 @@ url_phish3 = "https://www.dropbox.com/scl/fi/xs5b6d59p6mzlxtyf6qeh/CLICK-TO-CONT
 url_legit1 = "https://www.thoughtfullearning.com"
 url_legit2 = "https://www.lastbryggan.se"
 url_legit3 = "https://www.oncoguia.org.br"
+url_legit4 = "https://www.amazon.co.uk"
 
 #domain = urlparse(url).path.count("/")
 #print("domain / -> ", domain)
 
-#ssl certificate NEED REVIEW ///// 
+#ssl certificate 
+# NEED REVIEW ******* 1-the expiry date issue base on the document    2-phishers buy old domain to trick the detections 3-what if there is no ssl certificate (url_Phish2) or connection problem maybe ??
 
 def certificate_info(url):
     host = urlparse(url).hostname
-    print("host: ", host)
-    context = ssl.create_default_context()
-    with socket.create_connection((host,443),timeout=5) as sock:    #opening a connection to the server on port 443
-        with context.wrap_socket(sock, server_hostname=host) as ssock:  #use the ssl connectio/ handshake
-            cert = ssock.getpeercert() #getting the certificate
-    print("cert: ", cert)
-    return cert
+    print("host:", host)
+    print("---------------------------------------------------")
+
+    try:
+        # Resolve hostname to IP first (critical)
+        ip = socket.gethostbyname(host)
+        print("IP: ",ip)
+        context = ssl.create_default_context()
+
+        with socket.create_connection((ip, 443), timeout=5) as sock:
+            with context.wrap_socket(sock, server_hostname=host) as ssock:
+                cert = ssock.getpeercert()
+
+        print("cert:", cert)
+        print("---------------------------------------------------")
+        return cert
+
+    except Exception as e:
+        print("Could not retrieve certificate:", e)
+        return None
+
 
 def certificate_extract_features(cert):
     issuer = dict(x[0] for x in cert["issuer"])["organizationName"] #dict of issuer
     print("Issuer: ", issuer)
+
     valid_from = datetime.strptime(cert["notBefore"], "%b %d %H:%M:%S %Y %Z")
-    print("valid_from", valid_from)
-    age_days = (datetime.utcnow() - valid_from).days
+    valid_from = valid_from.replace(tzinfo=timezone.utc)  
+    print("valid_from: ", valid_from)
+
+    valid_to = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z")
+    valid_to = valid_to.replace(tzinfo=timezone.utc)
+    print("valid_to: ", valid_to)
+
+    ###age_days = (datetime.utcnow() - valid_from).days
+    now = datetime.now(timezone.utc)
+    #print("now: ", now)
+    age_days = (now - valid_from).days
     print("age_days: ",age_days)
     age_years = age_days / 365
     print("age_years: ", age_years)
@@ -153,7 +180,7 @@ def https_cert_url(url):
         cert = certificate_info(url)
         issuer, age_years = certificate_extract_features(cert)
         uses_https = url.startswith("https")
-        print("uses_https: ", uses_https)
+        print("Uses HTTPS : ", uses_https)
 
         #if uses_https and issuer in trusted_issuers and age_years >= 1:
         if uses_https and age_years >= 1:
@@ -174,12 +201,48 @@ def https_cert_url(url):
         return "Phish"
         print(cert_ok)
 
-
 print("-----------------")
-print(https_cert_url(url_phish1))
 
+print(https_cert_url(url_phish2))
+print("-----------------")
+print("-----------------")
 
+def has_dns(url):       #document 1.4.2
+    cert = certificate_info(url)
+    host = urlparse(url).hostname
 
+    dns_names = []
+
+    if cert is None:
+        print("No Certificate returned, Phish")
+        return 1
+    
+    if "subjectAltName" in cert:
+        for entry in cert["subjectAltName"]:
+            if entry[0] == "DNS":
+                dns_names.append(entry[1])
+                print("DNS:", entry[1])
+
+        # Check if host matches any DNS entry (including wildcards)
+        for dns in dns_names:
+            if dns == host:
+                print("Legit - exact match")
+                return 0
+
+            if dns.startswith("*."):
+                base = dns[2:]
+                if host.endswith(base):
+                    print("Legit - wildcard match")
+                    return 0
+
+        print("Host NOT covered by certificate DNS → PHISH")
+        return 1
+
+    else:
+        print("No subjectAltName in cert → PHISH")
+        return 1
+    
+has_dns(url_phish2)
 #other 
 '''
 #ip=0
@@ -254,16 +317,17 @@ else:
 #print("--------------------------------------")
 '''
 def domain_expiry(url):
-    #if domain expires in <= 1 year is Phish
+    #if domain expires in <= 1 year is Phish    #document 1.1.9
     #expire_date = 0
     try:
         domain = whois.whois(tldextract.extract(url).registered_domain)
+        print("domain: ", domain)
         expiry_date = domain.expiration_date
         print("TRY: expiry_date: ", expiry_date)
         if isinstance(expiry_date, list): # if the expiry_date exist as list pick the first item
             expiry_date = expiry_date[0]
         today = datetime.now()
-        print("today day in if : ",today)
+        print("today : ",today)
         days_left = (expiry_date - today).days
         print("days left: ", days_left)
         if days_left >= 365:
@@ -276,10 +340,39 @@ def domain_expiry(url):
     print("expiry date: ", expiry_date)
     return expiry_date
 
-domain_expiry(url_random)
+domain_expiry(url_legit4)
 '''
+'''
+def domain_age(url):    # document 1.4.1
+    try:
+        domain = whois.whois(tldextract.extract(url).registered_domain)
+        print("domain: ", domain)
+        creation_date = domain.creation_date
+        print("creation_date: ", creation_date)
+        if isinstance(creation_date, list): # if the expiry_date exist as list pick the first item
+            creation_date = creation_date[0]
+        today = datetime.now()
+        print("today : ",today)
+        month_passed = (today - creation_date).days / 30
+        print("Month left: ", month_passed)
+        if month_passed >= 6:
+            domain_age = 0 #legit
+            print("Legit")
+            return "Legit"
+        else:
+            domain_age = 1 #phish
+            print("Phish")
+            return "Phish"
+    except:
+        domain_age = 2 # needs to be reviewed and discussed
+        print("Suspecious")
+        return "Suspecious"
+    
+  
+domain_age(url_phish3)
+'''
+    
 
-'''
 def get_soup(url):
     try:
         response = requests.get(url, timeout = 5)
@@ -288,5 +381,20 @@ def get_soup(url):
     except:
         return None, None
 
-get_soup(url_legit1)
-'''
+def feature_right_click(url):   #document 1.3.3
+    _, html_content = get_soup(url)
+    if not html_content: 
+        print("no HTML content")
+        right_click = 1
+        return right_click
+    if "event.button==2" in html_content or "contextmenu" in html_content.lower():
+        print("Right click disabled")
+        right_click = 1
+        return right_click
+    else:
+        print("Right click is NOT disabled")
+        right_click = 0
+        print("right_click: ", right_click)
+        return right_click
+
+feature_right_click(url_phish3)
