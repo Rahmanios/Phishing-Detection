@@ -10,27 +10,58 @@ import whois
 import dns.resolver
 import requests
 from bs4 import BeautifulSoup
+import Extract_Combine_CSVs
 
-'''
-def have_ip(url): # If there is IP instead of domain name, its likely someone is trying to steal personal information
+print("ip: ++++++++++++++++++++++")
+
+url_random = "http://www.192.168.199.122.co.uk//@aaaaa/sfds565656mndasAKB1/32.php"
+url_phish1 = "https://qrco.de/bfHZzy"
+url_phish2 = "https://juegnjkwn.firebaseapp.com/"
+url_phish3 = "https://www.dropbox.com/scl/fi/xs5b6d59p6mzlxtyf6qeh/CLICK-TO-CONTINUE-SIGN-IN.paper?dl=0&rlkey=u42md1bnw846o3enf479kqcne"
+url_phish4 = "https://us20.campaign-archive.com/?u=285c8bc038ed2212d4b526c88&id=7e54fd6db8"
+url_phish5 = "https://sites.google.com/view/oiuiruieor98490krejjkljklejkef/home"
+url_legit1 = "https://www.thoughtfullearning.com"
+url_legit2 = "https://www.lastbryggan.se"
+url_legit3 = "https://www.oncoguia.org.br"
+url_legit4 = "https://www.amazon.co.uk"
+url_legit5 = "https://www.tkani-textiliya.ru"
+url_legit6 = "https://www.hepsiburadaefaturam.com"
+
+
+
+def have_ip(url): #document 1.1.1
+    '''
+    If there is IP instead of domain name, its likely someone is trying to steal personal information
+    '''
     host = urlparse(url).hostname
-    #print(host)
-    ip_pattern = r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # raw string 
+    print(host)
+    ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b' # raw string 
     #ipaddress.ip_address(host)
     if re.search(ip_pattern,host):
         ip = 1
+        print("has ip: ", ip)
+        return ip
     else:
         ip = 0
+        print("No ip: ", ip)
+        return ip
 
-def have_at_sign(url): # if @ presence in URL then browser ignores everything and process the @
-    at = 0
+have_ip(url_random)
+
+def have_at_sign(url): #document 1.1.4
+    '''
+    if @ presence in URL then browser ignores everything and process the @
+    '''
     if "@" in url:
         at = 1
+        print("@ in url: ", at)
+        return at
     else:
         at = 0
-    return at
+        print("No @ in url: ", at)
+        return at
 
-def redirection(url):
+def redirection(url): #document 1.1.5
     pos = url.rfind("//") # rfind finds the last occurance
     redirect = 0
     if pos > 6:
@@ -39,7 +70,7 @@ def redirection(url):
         redirect=0
     return redirect
 
-def url_len(url): # url length 
+def url_length(url): # #document 1.1.2
     url_len = len(url)
     len = 0
     if(len<54):
@@ -48,7 +79,7 @@ def url_len(url): # url length
         len = 1
     return len
 
-def dash_in_domain(url): # dash - in domain name part
+def dash_in_domain(url): # document 1.1.6
     host = urlparse(url).hostname
     if "-" in host:
         dash = 1
@@ -56,7 +87,7 @@ def dash_in_domain(url): # dash - in domain name part
         dash = 0
     return dash
 
-def sub_multisub_domain(url):
+def sub_multisub_domain(url): #document 1.1.7
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
     #print("domain: ", domain)
@@ -85,44 +116,26 @@ def sub_multisub_domain(url):
         #print("Phish")
     return dots_count
 
-def http_https(url):
+def http_https(url): #document 1.1.12
     if "https" in url:
         https = 0
     else:
         https = 1
     return https
 
-
-
-# the main extraction function 
-def feature_extraction(url):
-    features=[]
-    features.append(have_ip(url))
-    features.append(have_at_sign(url))
-
-
-
-    return features
 '''
 
 '''''''TESTING'''''''
 
-url_random = "http://www.192.168.199.122.co.uk//@aaaaa/192.168.133.199/sfds565656mndasAKB1/32.php"
-url_phish1 = "https://qrco.de/bfHZzy"
-url_phish2 = "https://juegnjkwn.firebaseapp.com/"
-url_phish3 = "https://www.dropbox.com/scl/fi/xs5b6d59p6mzlxtyf6qeh/CLICK-TO-CONTINUE-SIGN-IN.paper?dl=0&rlkey=u42md1bnw846o3enf479kqcne"
-url_legit1 = "https://www.thoughtfullearning.com"
-url_legit2 = "https://www.lastbryggan.se"
-url_legit3 = "https://www.oncoguia.org.br"
-url_legit4 = "https://www.amazon.co.uk"
+
 
 #domain = urlparse(url).path.count("/")
 #print("domain / -> ", domain)
 
 #ssl certificate 
 # NEED REVIEW ******* 1-the expiry date issue base on the document    2-phishers buy old domain to trick the detections 3-what if there is no ssl certificate (url_Phish2) or connection problem maybe ??
-
-def certificate_info(url):
+'''
+def certificate_info(url): #document 1.1.8
     host = urlparse(url).hostname
     print("host:", host)
     print("---------------------------------------------------")
@@ -146,7 +159,7 @@ def certificate_info(url):
         return None
 
 
-def certificate_extract_features(cert):
+def certificate_extract_features(cert): #document 1.1.8
     issuer = dict(x[0] for x in cert["issuer"])["organizationName"] #dict of issuer
     print("Issuer: ", issuer)
 
@@ -167,7 +180,7 @@ def certificate_extract_features(cert):
     print("age_years: ", age_years)
     return issuer, age_years
 
-def https_cert_url(url):
+def https_cert_url(url): #document 1.1.8
     trusted_issuers = [
     "DigiCert Inc",
     "Let's Encrypt",
@@ -202,12 +215,10 @@ def https_cert_url(url):
         print(cert_ok)
 
 print("-----------------")
-
 print(https_cert_url(url_phish2))
 print("-----------------")
-print("-----------------")
 
-def has_dns(url):       #document 1.4.2
+def has_dns(url): #document 1.4.2
     cert = certificate_info(url)
     host = urlparse(url).hostname
 
@@ -243,81 +254,16 @@ def has_dns(url):       #document 1.4.2
         return 1
     
 has_dns(url_phish2)
-#other 
-'''
-#ip=0
-host = urlparse(url).hostname
-print("host: ",host)
-ip_pattern = r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # raw string \es are chars not escape codes
-#ipaddress.ip_address(host)
-if re.search(ip_pattern,host):
-    ip = 1
-else:
-    ip = 0
 
-print("IP: ",ip)
-#--------------------------
-pos = url.rfind("//")
-print(pos)
-redirect = 0
-if pos > 6:
-    redirect=1
-else:
-    redirect=0
-print("redirect value: ",redirect)
-url_len = len(url)
-print("Len: ", url_len)
-if(url_len<54):
-    len = 0
-else:
-    len = 1
-print("len: ",len)
-
-if "-" in host:
-    dash = 1
-else:
-    dash = 0
-
-print("dash: ", dash)
-
-parsed_url = urlparse(url2) 
-domain = parsed_url.netloc
-#print("domain: ", domain)
-if domain.startswith("www."):
-    domain = domain[4:] #removing the www. part
-#print("domain without www.===>>", domain)
-parts = domain.split(".")   #spliting each part of the domain 
-#print(parts)
-#print(len(parts [-1]))
-if len(parts[-1]) == 2: #is the last part a 2letter country code?  country-code top-level domains (ccTLD) length ==2
-    parts = parts[:-1]  #take the last cc
-    #print("if parts:", parts)
-#print("PARTS::::",parts)
-#print("DOMAIN::::",domain)
-domain = ".".join(parts) #converting back to string
-#print("NEW DOMAIN::",domain)
-dots = domain.count(".")
-print("dots: ", dots)
-if dots == 1:
-    dots_count = 0
-    print("Legit")
-elif dots == 2:
-    dots_count = 2 #lets consider 2 as suspicious until further decision
-else:
-    dots_count = 1
-    print("Phish")
-'''
-
-#------ domain-based ------#
 ##domain = whois.whois(tldextract.extract(url_phish3).registered_domain)
 ##print("domain details: ",domain)
 #domain = tldextract.extract(url_phish1).registered_domain
 #print("doooomain: ", domain)
 #print("whoooois: ", whois.whois(domain))
 #print("--------------------------------------")
-'''
-def domain_expiry(url):
-    #if domain expires in <= 1 year is Phish    #document 1.1.9
+
+def domain_expiry(url): #document 1.1.9
+    #if domain expires in <= 1 year is Phish
     #expire_date = 0
     try:
         domain = whois.whois(tldextract.extract(url).registered_domain)
@@ -372,7 +318,7 @@ def domain_age(url):    # document 1.4.1
 domain_age(url_phish3)
 '''
     
-
+'''
 def get_soup(url):
     try:
         response = requests.get(url, timeout = 5)
@@ -381,7 +327,7 @@ def get_soup(url):
     except:
         return None, None
 
-def feature_right_click(url):   #document 1.3.3
+def feature_right_click(url): #document 1.3.3
     _, html_content = get_soup(url)
     if not html_content: 
         print("no HTML content")
@@ -398,3 +344,39 @@ def feature_right_click(url):   #document 1.3.3
         return right_click
 
 feature_right_click(url_phish3)
+
+print("---------------------")
+
+def custom_status_bar(url):    #Document 1.3.2
+    _,html_content = get_soup(url)
+    if not html_content:
+        status_bar = 1
+        print("No html content, Phish",status_bar)
+        return status_bar
+    if "onmouseover" in html_content.lower() and "window.status" in html_content.lower():
+        status_bar = 1
+        print("Mouseover or Window status, Phish",status_bar)
+        return status_bar
+    else:
+        status_bar = 0
+        print("No status bar customized, Legit",status_bar)
+        return status_bar
+    
+custom_status_bar(url_legit5)
+
+print("---------------------")
+print("---------------------")
+print("---------------------")
+
+# the main extraction function 
+def feature_extraction(url):
+    features=[]
+    features.append(have_ip(url))
+    features.append(have_at_sign(url))
+    
+
+    print(features)
+    return features
+
+feature_extraction(url_legit3)
+
