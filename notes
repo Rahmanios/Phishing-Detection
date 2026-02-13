@@ -1,0 +1,25 @@
+def have_ip(url): #document 1.1.1                           URL_Based
+def have_at_sign(url): #document 1.1.4                      URL_Based
+def redirection(url): #document 1.1.5                       URL_Based
+def url_length(url): # #document 1.1.2                      URL_Based
+def dash_in_domain(url): # document 1.1.6                   URL_Based
+def sub_multisub_domain(url): #document 1.1.7               URL_Based
+def http_https(url): #document 1.1.12                       URL_Based
+def https_cert_url(url): #document 1.1.8                    Domain_Based
+def has_dns(url): #document 1.4.2                           Domain_Based
+def domain_expiry(url): #document 1.1.9                     Domain_Based
+def domain_age(url):    # document 1.4.1                    Domain_Based
+def feature_right_click(url): #document 1.3.3               HTML_JS
+def custom_status_bar(url):    #Document 1.3.2              HTML_JS
+
+def iframe_redirection_feature(url): # document 1.3.5
+
+
+
+Query:  start=false&amp;loop=false&amp;delayms=3000 
+
+functions for number of dots - dashes - 
+
+how long machine learning takes time?
+using google colab
+methodology update
