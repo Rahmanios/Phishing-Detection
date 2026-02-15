@@ -109,8 +109,8 @@ def url_path(url):
 
     #suspecious file extensions in path
     for ext in extentions:
-        if ext in path:
-            print("extension used in path:", ext)
+        if ext in path or ext in domain:
+            print("-----------------extension used in path:", ext)
             path_result["file_extension"] = True
             break
         else:
@@ -155,6 +155,6 @@ def url_path(url):
 
 
 
-result = url_path(url_legit8)
+result = url_path(url_phish3)
 for key, value in result.items():
     print(f"{key}: {value}")

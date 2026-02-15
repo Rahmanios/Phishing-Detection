@@ -49,16 +49,16 @@ def https_certificate(url):
     """
     print(url)
     parsed = urlparse(url)
-    result = {}
+    flags = {}
 
     # If not HTTPS → phishing
     print("parsed.sceme = ",parsed.scheme)
     #if parsed.scheme != "https":
         #return 2  # Phishing
     if parsed.scheme == "https":
-        result["Has https"] = True
+        flags["Has https"] = False
     else:
-        result["has https"] = False
+        flags["has https"] = True
         
 
 
@@ -66,9 +66,9 @@ def https_certificate(url):
     cert = get_certificate(hostname)
     print("cert::::: ", cert)
     # If certificate cannot be retrieved → phishing
-    result["No Cert"] = False
+    flags["No Cert"] = False
     if cert is None:
-        result["No Cert"] = True
+        flags["No Cert"] = True
     else:
 
     # Extract certificate validity dates
@@ -82,43 +82,43 @@ def https_certificate(url):
         issuer_name = issuer.get('organizationName', '').lower()
         if issuer_name:
             print("issuer name:",issuer_name)
-            result["issuer name"] = False
+            flags["issuer name"] = False
         else:
-            result["issuer name"] = True #no issuer name Phish
+            flags["issuer name"] = True #no issuer name Phish
 
 
         subject = dict(x[0] for x in cert['subject'])
         subject_name = subject.get('commonName', '').lower()
         if subject_name:
             print("subject name:",subject_name)
-            result["subject name"] = False
+            flags["subject name"] = False
         else:
-            result["subject name"] = True  #no subject name Phish
+            flags["subject name"] = True  #no subject name Phish
   
 
         self_signed = issuer_name == subject_name
         #print("self_signed--------->",self_signed)
-        result["self signed"] = self_signed
+        flags["self signed"] = self_signed
 
         print("cert age days: ", cert_age_days)
         if cert_age_days < 7: #30
-            result["Cert age days"] = True #very new - Phish
+            flags["Cert age days"] = True #very new - Phish
         #elif cert_age_days < 365:
             # Suspicious
         else:
-            result["Cert age days"] = False
+            flags["Cert age days"] = False
 
         print("cert_validity_days: ",cert_validity_days)
         if cert_validity_days < 14: ####90
-            result["cert validity days"] = True    # Short-lived cert
+            flags["cert validity days"] = True    # Short-lived cert
         else:
-            result["cert validity days"] = False
+            flags["cert validity days"] = False
 
         print("self signed: ", self_signed)
         if self_signed:
-            result["self signed: "] = True  #Phish
+            flags["self signed: "] = True  #Phish
         else:
-            result["self signed: "] = False
+            flags["self signed: "] = False
 
         trusted_big_cas = [
             "digicert", "globalsign", "sectigo", "godaddy", "let's encrypt", "amazon",
@@ -126,9 +126,9 @@ def https_certificate(url):
             "microsoft", "network solutions", "entrust", "trustwave", "dotster", 
         ]
         if not any(ca in issuer_name.lower() for ca in trusted_big_cas):
-            result["trusted cert"] = True
+            flags["trusted cert"] = True
         else:
-            result["trusted cert"] = False
+            flags["trusted cert"] = False
 
         print("issuer name: ", issuer_name)
 
@@ -136,11 +136,8 @@ def https_certificate(url):
         print("subject name: ", subject_name)  
         #if subject_name not in hostname:
         if fnmatch.fnmatch(subject_name, hostname):
-            result["Host_subject_names: "] = True   #Phish
-
-
-    
-    return result
+            flags["Host_subject_names: "] = True   #Phish
+    return flags
     
 cert = https_certificate(url_phish5)
 print("--------------------")

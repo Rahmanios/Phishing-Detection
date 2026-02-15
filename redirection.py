@@ -58,7 +58,7 @@ def is_cross_domain(page_url, iframe_src): #document 1.3.5
     print("---iframe_domain---", iframe_domain)
     return iframe_domain and iframe_domain != page_domain
 
-def is_benign_iframe(src): # for lowering the false positives # document 1.3.5
+def legit_iframes(src): # for lowering the false positives # document 1.3.5
     legit_cross_domains = [
         "googletagmanager.com",
         "google.com/recaptcha",
@@ -77,7 +77,7 @@ def is_benign_iframe(src): # for lowering the false positives # document 1.3.5
             return True
     return False
 
-def iframe_redirection_feature(url): # document 1.3.5
+def iframe_redirection(url): # document 1.3.5
     print("url: ", url)
     print("----------------------")
     soup, html = get_soup(url)
@@ -94,7 +94,6 @@ def iframe_redirection_feature(url): # document 1.3.5
     if soup is None:
         flags["No Soup"] = True
         print("No Soup!!!")
-        #return {"flags": {}}
         return flags
 
     iframes = soup.find_all("iframe")
@@ -113,7 +112,7 @@ def iframe_redirection_feature(url): # document 1.3.5
         print("height:", height)
         style = iframe.get("style", "").lower()
 
-        #if is_benign_iframe(src):
+        #if legit_iframes(src):
             #continue
 
         # invisible iframe
@@ -155,15 +154,15 @@ def iframe_redirection_feature(url): # document 1.3.5
         "iframe_count": len(iframes)
     }
 
-result = iframe_redirection_feature(url_phish1)
+result = iframe_redirection(url_legit1)
 print("---------------------")
 
 #print("result: ",result)
 
 print("---------------------")
-#for flag, value in result["flags"].items():
-    #print(f"{flag.title()}: {value}")
+for flag, value in result["flags"].items():
+    print(f"{flag.title()}: {value}")
 
-for flag, value in result.items():
-    print(f"{flag}: {value}")
+#for flag, value in result.items():
+    #print(f"{flag}: {value}")
 

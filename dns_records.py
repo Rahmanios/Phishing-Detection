@@ -26,7 +26,7 @@ url_legit9 = "https://www.skinsmonkey.com"
 url_legit10 = "https://www.redlineinventory.com"
 
 #domain age days needs decision
-def resolve_A_cname(url):
+def resolve_A_cname(url): #document 1.4.2
     resolved_ips = []
     visited = set()
     resolver = dns.resolver.Resolver()
@@ -65,7 +65,7 @@ def resolve_A_cname(url):
     return resolved_ips
 
 #-------------------
-def parent_domain(url):
+def parent_domain(url): #document 1.4.2
     """
     Extracting the registered domain 
     """
@@ -74,10 +74,10 @@ def parent_domain(url):
     return f"{ext.domain}.{ext.suffix}"
 
 
-def check_dns_records(url):
+def dns_records(url): #document 1.4.2
     #print("domain: ",domain)
     results = {}
-    records = {}
+    flags = {}
 
     domain = parent_domain(url)
     results["domain"] = domain
@@ -88,23 +88,23 @@ def check_dns_records(url):
     results["resolved_ips"] = ips
 
     if ips:
-        records["A"] = True
+        flags["A"] = True
     else:
-        records["A"] = False
+        flags["A"] = False
 
 
 # 2. Check AAAA record (IPv6 address)
     results["AAAA_record"] = None
-    records["AAAA"] = False
+    flags["AAAA"] = False
     try:
         aaaa_records = dns.resolver.resolve(domain, "AAAA")
         results["AAAA_record"] = [ip.to_text() for ip in aaaa_records]
-        records["AAAA"] = True
+        flags["AAAA"] = True
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
         try:
             aaaa_records = dns.resolver.resolve("www." + domain, "AAAA")
             results["AAAA_record"] = [ip.to_text() for ip in aaaa_records]
-            records["AAAA"] = True
+            flags["AAAA"] = True
         except Exception:
             # If both fail, we just leave records["AAAA"] as False
             pass 
@@ -119,20 +119,20 @@ def check_dns_records(url):
         mx_records = dns.resolver.resolve(domain, "MX")
         results["MX_record"] = [mx.exchange.to_text() for mx in mx_records]
         print("MX_Records", results["MX_record"])
-        records["MX"] = True
+        flags["MX"] = True
     except:
         results["MX_record"] = None
-        records["MX"] = False
+        flags["MX"] = False
 
 # 4. Checking NS on parent domain
     try:
         ns_records = dns.resolver.resolve(domain, "NS")
         results["NS_record"] = [ns.to_text() for ns in ns_records]
         print("NS_record: ", results["NS_record"])
-        records["NS"] = True
+        flags["NS"] = True
     except:
         results["NS_record"] = None
-        records["NS"] = False
+        flags["NS"] = False
 
 # 5. Domain age from WHOIS
     try:
@@ -149,25 +149,25 @@ def check_dns_records(url):
         results["domain_age_days"] = age_days
         print("Domain age days: ", age_days)
         if age_days > 7:
-            records["Age days"] = True
+            flags["Age days"] = True
     except:
         results["domain_age_days"] = None
-        records["Age days"] = False
+        flags["Age days"] = False
     # output
 
 
     print("-------------------------------|")
     return {
         "results" : results,
-        "records" : records
+        "flags" : flags
     }
 
 print("|---------------results----------------|")
-dns = (check_dns_records(url_legit4))
+dns = (dns_records(url_phish2))
 
 
 for item, value in dns["results"].items():
     print(f"{item.title()}: {value}")
 print("-------------------------------|")
-for item, value in dns["records"].items():
+for item, value in dns["flags"].items():
     print(f"{item.title()}: {value}")
