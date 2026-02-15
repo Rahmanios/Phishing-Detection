@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 #import Extract_Combine_CSVs
 
 
-url_random = "http://www.192.168.199.122.co.uk//@aaaaa/sfds565656mndasAKB1/32.php"
+url_random = "http://www.192.168.199.122.co.uk//@aaaaa/sfds56565-6mndasAKB1/sfsdsf-fsdfsfs/32.php"
 
 url_phish1 = "http://receptive-purpose-551959.framer.app/"
 url_phish2 = "https://juegnjkwn.firebaseapp.com/"
@@ -38,64 +38,119 @@ url_legit9 = "https://www.skinsmonkey.com"
 url_legit10 = "https://www.redlineinventory.com"
 
 
+flags = {
+    "has_ip" : False,
+    "has_at_sign" : False,
+    "redirection" : False,
+    "url_length" : False,
+    "dash_in_domain" : False,
+    "sub_multisub" : False,
+    "http_https" : False,
+    "domain_expiry" : False,
+    "domain_age" : False,
+    "right_click" : False,
+    "custom_status_bar" : False
+
+}
+
 """
-def have_ip(url): #document 1.1.1
+def get_soup(url):
+    #try:
+    #print("Attempting to get ", url)
+    response = requests.get(url, timeout = 10)
+    print(BeautifulSoup(response.text, "html.parser"))
+    return BeautifulSoup(response.text, "html.parser"), response.text
+    #except:
+    #    return None, None
+"""
+def get_soup(url):
+    try:
+        response = requests.get(url, timeout=10)
+        return BeautifulSoup(response.text, "html.parser"), response.text
+    except:
+        return None, None
+    
+
+
+
+
+def has_ip(url): #document 1.1.1
     '''
     If there is IP instead of domain name, its likely someone is trying to steal personal information
     '''
     host = urlparse(url).hostname
-    print(host)
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b' # raw string 
-    #ipaddress.ip_address(host)
     if re.search(ip_pattern,host):
         ip = 1
         print("has ip: ", ip)
-        return ip
+        flags["has_ip"] = True
+        return flags["has_ip"]
     else:
         ip = 0
         print("No ip: ", ip)
-        return ip
+        flags["has_ip"] = False
+        return flags["has_ip"]
+#has_ip(url_random)
 
-have_ip(url_random)
 
-def have_at_sign(url): #document 1.1.4
+def has_at_sign(url): #document 1.1.4
     '''
     if @ presence in URL then browser ignores everything and process the @
     '''
     if "@" in url:
         at = 1
-        print("@ in url: ", at)
-        return at
+        flags["has_at_sign"] = True
+        return flags["has_at_sign"]
     else:
         at = 0
-        print("No @ in url: ", at)
-        return at
+        flags["has_at_sign"] = False
+
+    print("@ in url: ", at)
+    return flags["has_at_sign"]
+    
 
 def redirection(url): #document 1.1.5
     pos = url.rfind("//") # rfind finds the last occurance
     redirect = 0
     if pos > 6:
         redirect=1
+        flags["redirection"] = True
     else:
         redirect=0
-    return redirect
+        
+        flags["redirection"] = False
 
+    print("redirection: ", redirect)
+    return flags["redirection"]
+
+   
 def url_length(url): # #document 1.1.2
     url_len = len(url)
     length = 0
-    if(url_len<54):
-        length = 0
-    else:
+    if(url_len > 54):
         length = 1
-    return length
+        flags["url_length"] = True
+    else:
+        length = 0
+        flags["url_length"] = False
+    
+    print("url_length:", url_len , "|  length: ", length)
+    return flags["url_length"]
+
 
 def dash_in_domain(url): # document 1.1.6
     host = urlparse(url).hostname
+    dash_count = 0
     if "-" in host:
         dash = 1
+        flags["dash_in_domain"] = True
     else:
         dash = 0
-    return dash
+        flags["dash_in_domain"] = False
+    
+    print("dash_in_domain: ", dash)
+    return flags["dash_in_domain"]
+
 
 def sub_multisub_domain(url): #document 1.1.7
     parsed_url = urlparse(url)
@@ -105,177 +160,41 @@ def sub_multisub_domain(url): #document 1.1.7
         domain = domain[4:] #removing the www. part
     #print("domain without www.===>>", domain)
     parts = domain.split(".")   #spliting each part of the domain 
-    #print(parts)
+    #print("parts: ", parts)
     #print(len(parts [-1]))
     if len(parts[-1]) == 2: #is the last part a 2letter country code?  country-code top-level domains (ccTLD) length ==2
         parts = parts[:-1]  #take the last cc
         #print("if parts:", parts)
     #print("PARTS::::",parts)
-    #print("DOMAIN::::",domain)
     domain = ".".join(parts) #converting back to string
     #print("NEW DOMAIN::",domain)
     dots = domain.count(".")
     print("dots: ", dots)
     if dots == 1:
         dots_count = 0
-        #print("Legit")
-    elif dots == 2:
-        dots_count = 2 #lets consider 2 as suspicious until further decision
+        flags["sub_multisub"] = False  #legit
+    #elif dots == 2:
+        #dots_count = 2 #lets consider 2 as suspicious until further decision
     else:
         dots_count = 1
-        #print("Phish")
-    return dots_count
-"""
+        flags["sub_multisub"] = True  #phish
+
+    print("sub_multisub: ", dots_count)
+    return flags["sub_multisub"]
+
+
 def http_https(url): #document 1.1.12
     if "https" in url:
         https = 0
+        flags["http_https"] = False
     else:
         https = 1
-    return https
+        flags["http_https"] = True
+
+    print("http_https: ", https)
+    return flags["http_https"]
 
 
-
-'''''''TESTING'''''''
-
-
-
-#domain = urlparse(url).path.count("/")
-#print("domain / -> ", domain)
-
-#ssl certificate 
-# NEED REVIEW ******* 1-the expiry date issue base on the document    2-phishers buy old domain to trick the detections 3-what if there is no ssl certificate (url_Phish2) or connection problem maybe ??
-
-def certificate_info(url): #document 1.1.8
-    host = urlparse(url).hostname
-    print("host:", host)
-    print("---------------------------------------------------")
-
-    try:
-        # Resolve hostname to IP first (critical)
-        ip = socket.gethostbyname(host)
-        print("IP: ",ip)
-        context = ssl.create_default_context()
-
-        with socket.create_connection((ip, 443), timeout=5) as sock:
-            with context.wrap_socket(sock, server_hostname=host) as ssock:
-                cert = ssock.getpeercert()
-
-        print("cert:", cert)
-        print("---------------------------------------------------")
-        return cert
-
-    except Exception as e:
-        print("Could not retrieve certificate:", e)
-        return None
-
-
-def certificate_extract_features(cert): #document 1.1.8
-    issuer = dict(x[0] for x in cert["issuer"])["organizationName"] #dict of issuer
-    print("Issuer: ", issuer)
-
-    valid_from = datetime.strptime(cert["notBefore"], "%b %d %H:%M:%S %Y %Z")
-    valid_from = valid_from.replace(tzinfo=timezone.utc)  
-    print("valid_from: ", valid_from)
-
-    valid_to = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z")
-    valid_to = valid_to.replace(tzinfo=timezone.utc)
-    print("valid_to: ", valid_to)
-
-    ###age_days = (datetime.utcnow() - valid_from).days
-    now = datetime.now(timezone.utc)
-    #print("now: ", now)
-    age_days = (now - valid_from).days
-    print("age_days: ",age_days)
-    age_years = age_days / 365
-    print("age_years: ", age_years)
-    return issuer, age_years
-
-def https_cert_url(url): #document 1.1.8
-    trusted_issuers = [
-    "DigiCert Inc",
-    "Let's Encrypt",
-    "GlobalSign",
-    "Sectigo Limited",
-    "GoDaddy.com, Inc.",
-    "Google Trust Services"
-    ]
-    #try:
-    cert = certificate_info(url)
-    issuer, age_years = certificate_extract_features(cert)
-    uses_https = url.startswith("https")
-    print("Uses HTTPS : ", uses_https)
-
-    #    #if uses_https and issuer in trusted_issuers and age_years >= 1:
-    #    if uses_https and age_years >= 1:
-    #        cert_ok = 0
-    #        print("Legit")
-    #        return cert_ok
-    #    #elif uses_https and issuer not in trusted_issuers:
-    #    elif uses_https and age_years <= 1:
-    #        cert_ok = 2 # considered as suspicious temp
-    #        print("Certificate Suspicious")
-    #        return cert_ok
-            
-    #    else:
-    #        cert_ok = 1
-    #        print("Phish")
-    #        return cert_ok
-    #except:
-    #    cert_ok = 1
-    #    print("Could'nt retrieve any Certificate")
-    #    return cert_ok
-     
-
-#print("-----------------")
-#print(https_cert_url(url_phish2))
-#print("-----------------")
-
-def has_dns(url): #document 1.4.2
-    cert = certificate_info(url)
-    host = urlparse(url).hostname
-    print("host:: ", host)
-    #aaaa_records = dns.resolver.Resolve(url, "AAAA")
-    #
-    dns_names = []
-    dns_data = []
-
-    if cert is None:
-        print("No Certificate returned, Phish")
-        return 1
-    
-    if "subjectAltName" in cert:
-        for entry in cert["subjectAltName"]:
-            if entry[0] == "DNS":
-                dns_names.append(entry[1])
-                print("DNS:", entry[1])
-
-        # Check if host matches any DNS entry (including wildcards)
-        for dns in dns_names:
-            if dns == host:
-                print("Legit - exact match")
-                return 0
-
-            if dns.startswith("*."):
-                base = dns[2:]
-                if host.endswith(base):
-                    print("Legit - wildcard match")
-                    return 0
-
-        print("Host NOT covered by certificate DNS → PHISH")
-        return 1
-
-    else:
-        print("No subjectAltName in cert → PHISH")
-        return 1
-
-#has_dns(url_phish2)
-
-##domain = whois.whois(tldextract.extract(url_phish3).registered_domain)
-##print("domain details: ",domain)
-#domain = tldextract.extract(url_phish1).registered_domain
-#print("doooomain: ", domain)
-#print("whoooois: ", whois.whois(domain))
-#print("--------------------------------------")
 """
 def domain_expiry(url): #document 1.1.9
     #if domain expires in <= 1 year is Phish
@@ -300,7 +219,7 @@ def domain_expiry(url): #document 1.1.9
     
     print("expiry date: ", expiry_date)
     return expiry_date
-"""
+
 #domain_expiry(url_legit4)
 """
 def domain_age(url):    # document 1.4.1
@@ -313,51 +232,47 @@ def domain_age(url):    # document 1.4.1
             creation_date = creation_date[0]
         today = datetime.now()
         print("today : ",today)
-        month_passed = (today - creation_date).days / 30
-        print("Month left: ", month_passed)
-        if month_passed >= 6:
+        age_days = (today - creation_date).days
+        print("Month left: ", age_days)
+        if age_days > 7:
             domain_age = 0 #legit
             print("Legit")
-            return domain_age
+            flags["domain_age"] = False
+            return flags["domain_age"]
         else:
             domain_age = 1 #phish
             print("Phish")
-            return domain_age
+            flags["domain_age"] = True
+            return flags["domain_age"]
     except:
         domain_age = 2 # needs to be reviewed and discussed
         print("Suspecious")
-        return domain_age
-    
-  
+        flags["domain_age"] = True #more likely there is no record or timeout
+        return flags["domain_age"]
+
 #domain_age(url_phish3)
-"""
+
     
 
-def get_soup(url):
-    #try:
-    #print("Attempting to get ", url)
-    response = requests.get(url, timeout = 10)
-    print(BeautifulSoup(response.text, "html.parser"))
-    return BeautifulSoup(response.text, "html.parser"), response.text
-    #except:
-    #    return None, None
-"""
 def right_click(url): #document 1.3.3
     _, html_content = get_soup(url)
     if not html_content: 
         print("no HTML content")
         right_click = 1
+        flags["Right_click"] = True
         return right_click
     if "event.button==2" in html_content or "contextmenu" in html_content.lower():
         print("Right click disabled")
         right_click = 1
+        flags["Right_click"] = True
         return right_click
     else:
         print("Right click is NOT disabled")
         right_click = 0
         print("right_click: ", right_click)
-        return right_click
-"""
+        flags["Right_click"] = False
+        return flags["Right_click"]
+
 #right_click(url_phish3)
 
 print("---------------------")
@@ -368,15 +283,18 @@ def custom_status_bar(url):    #Document 1.3.2
     if not html_content:
         status_bar = 1
         print("No html content, Phish",status_bar)
-        return status_bar
+        flags["Status_bar"] = True
+        return flags["Status_bar"]
     if "onmouseover" in html_content.lower() and "window.status" in html_content.lower():
         status_bar = 1
         print("Mouseover or Window status, Phish",status_bar)
-        return status_bar
+        flags["Status_bar"] = True
+        return flags["Status_bar"]
     else:
         status_bar = 0
         print("No status bar customized, Legit",status_bar)
-        return status_bar
+        flags["Status_bar"] = False
+        return flags["Status_bar"]
 
 #custom_status_bar(url_legit5)
 
@@ -386,31 +304,30 @@ print("---------------------")
 def feature_extraction(url):
     features={}
     
-    #features["have_IP"] = have_ip(url)
-    #features[" @ sign"] = have_at_sign(url)
-    #features["Redirection"] = redirection(url)
-    #features["URL Length"] = url_length(url)
-    #features["dash - in domain"] = dash_in_domain(url)
-    #features["Sub domain"] = sub_multisub_domain(url)
-    #features["HTTP / HTTPS"] = http_https(url)
+    features["has_IP"] = has_ip(url)
+    features["at sign"] = has_at_sign(url)
+    features["Redirection"] = redirection(url)
+    features["URL Length"] = url_length(url)
+    features["dash - in domain"] = dash_in_domain(url)
+    features["Sub domain"] = sub_multisub_domain(url)
+    features["HTTP / HTTPS"] = http_https(url)
     #features["HTTPS cert"] = https_cert_url(url)
     #features["has DNS"] = has_dns(url)
-    #features["Domain Expiry"] = domain_expiry(url)
-    #features["Domain Age"] = domain_age(url)
-    #features["Right Click"] = right_click(url)
-    features["Custom status bar"] = custom_status_bar(url)
-    #features["Label"] = 0
-
+    #features["Domain Expiry"] = domain_expiry(url) #
+    features["Domain Age"] = domain_age(url) #
+    features["Right_Click"] = right_click(url) #
+    features["Custom status bar"] = custom_status_bar(url) #
+    features["Label"] = False   #Legit
 
 
     print("------------------------------------------------------")
     print(url)
-    print(features)
+    print("features: ",features)
 
-    print("---------------------")
+    print("------------------------------------------------------")
     total = sum(features.values())
     print("Total feature value: ", total)
     return features
 
-feature_extraction(url_legit1)
+feature_extraction(url_legit4)
 

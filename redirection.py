@@ -38,7 +38,7 @@ url_legit10 = "https://www.redlineinventory.com"
     
 def get_soup(url):
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=10)
         return BeautifulSoup(response.text, "html.parser"), response.text
     except:
         return None, None
@@ -155,7 +155,7 @@ def iframe_redirection_feature(url): # document 1.3.5
         "iframe_count": len(iframes)
     }
 
-result = iframe_redirection_feature(url_phish2)
+result = iframe_redirection_feature(url_phish1)
 print("---------------------")
 
 #print("result: ",result)
@@ -166,3 +166,4 @@ print("---------------------")
 
 for flag, value in result.items():
     print(f"{flag}: {value}")
+

@@ -83,7 +83,7 @@ def check_dns_records(url):
     results["domain"] = domain
     print("parent domain: ",results["domain"])
 
-    # 1. Resolving A records with CNAME 
+# 1. Resolving A records with CNAME 
     ips = resolve_A_cname(domain)
     results["resolved_ips"] = ips
 
@@ -96,7 +96,6 @@ def check_dns_records(url):
 # 2. Check AAAA record (IPv6 address)
     results["AAAA_record"] = None
     records["AAAA"] = False
-    
     try:
         aaaa_records = dns.resolver.resolve(domain, "AAAA")
         results["AAAA_record"] = [ip.to_text() for ip in aaaa_records]
@@ -115,7 +114,7 @@ def check_dns_records(url):
     print("AAAA_record:", results["AAAA_record"])
 
 
-    # 3. Checking MX on parent domain
+# 3. Checking MX on parent domain
     try:
         mx_records = dns.resolver.resolve(domain, "MX")
         results["MX_record"] = [mx.exchange.to_text() for mx in mx_records]
@@ -125,7 +124,7 @@ def check_dns_records(url):
         results["MX_record"] = None
         records["MX"] = False
 
-    # 4. Checking NS on parent domain
+# 4. Checking NS on parent domain
     try:
         ns_records = dns.resolver.resolve(domain, "NS")
         results["NS_record"] = [ns.to_text() for ns in ns_records]
@@ -135,12 +134,12 @@ def check_dns_records(url):
         results["NS_record"] = None
         records["NS"] = False
 
-    # 5. Domain age from WHOIS
+# 5. Domain age from WHOIS
     try:
         domain_info = whois.whois(domain)
-        print("################")
-        print(domain_info)
-        print("################")
+        #print("################")
+        #print(domain_info)
+        #print("################")
         creation_date = domain_info.creation_date
 
         if isinstance(creation_date, list):
@@ -163,8 +162,8 @@ def check_dns_records(url):
         "records" : records
     }
 
-print("-------------------------------|")
-dns = (check_dns_records(url_phish5))
+print("|---------------results----------------|")
+dns = (check_dns_records(url_legit4))
 
 
 for item, value in dns["results"].items():

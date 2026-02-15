@@ -59,78 +59,90 @@ def https_certificate(url):
         result["Has https"] = True
     else:
         result["has https"] = False
-        return 1 # phishing
+        
 
 
     hostname = parsed.hostname
     cert = get_certificate(hostname)
     print("cert::::: ", cert)
     # If certificate cannot be retrieved → phishing
+    result["No Cert"] = False
     if cert is None:
         result["No Cert"] = True
-        return 2
+    else:
 
     # Extract certificate validity dates
-    not_before = datetime.strptime(cert['notBefore'], "%b %d %H:%M:%S %Y %Z")
-    not_after = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
-    now = datetime.now(timezone.utc)
-    cert_age_days = (datetime.utcnow() - not_before).days
-    cert_validity_days = (not_after - not_before).days
+        not_before = datetime.strptime(cert['notBefore'], "%b %d %H:%M:%S %Y %Z")
+        not_after = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
+        now = datetime.now(timezone.utc)
+        cert_age_days = (datetime.utcnow() - not_before).days
+        cert_validity_days = (not_after - not_before).days
 
-    issuer = dict(x[0] for x in cert['issuer'])
-    issuer_name = issuer.get('organizationName', '').lower()
-    print("issuer name:",issuer_name)
-    result["issuer name"] = True
+        issuer = dict(x[0] for x in cert['issuer'])
+        issuer_name = issuer.get('organizationName', '').lower()
+        if issuer_name:
+            print("issuer name:",issuer_name)
+            result["issuer name"] = False
+        else:
+            result["issuer name"] = True #no issuer name Phish
 
-    subject = dict(x[0] for x in cert['subject'])
-    subject_name = subject.get('commonName', '').lower()
-    print("subject name:",subject_name)
-    result["subject name"] = True
+
+        subject = dict(x[0] for x in cert['subject'])
+        subject_name = subject.get('commonName', '').lower()
+        if subject_name:
+            print("subject name:",subject_name)
+            result["subject name"] = False
+        else:
+            result["subject name"] = True  #no subject name Phish
   
 
-    self_signed = issuer_name == subject_name
-    #print("self_signed--------->",self_signed)
-    result["self signed"] = self_signed
+        self_signed = issuer_name == subject_name
+        #print("self_signed--------->",self_signed)
+        result["self signed"] = self_signed
 
-    print("cert age days: ", cert_age_days)
-    if cert_age_days < 3: #30
-        result["Cert age days"] = False #phish
-    #elif cert_age_days < 365:
-           # Suspicious
-    else:
-        result["Cert age days"] = True
+        print("cert age days: ", cert_age_days)
+        if cert_age_days < 7: #30
+            result["Cert age days"] = True #very new - Phish
+        #elif cert_age_days < 365:
+            # Suspicious
+        else:
+            result["Cert age days"] = False
 
-    print("cert_validity_days: ",cert_validity_days)
-    if cert_validity_days < 14: ####90
-        result["cert validity days"] = False    # Short-lived cert
-    else:
-        result["cert validity days"] = True
+        print("cert_validity_days: ",cert_validity_days)
+        if cert_validity_days < 14: ####90
+            result["cert validity days"] = True    # Short-lived cert
+        else:
+            result["cert validity days"] = False
 
-    print("self signed: ", self_signed)
-    if self_signed:
-        result["self signed: "] = True  #Phish
+        print("self signed: ", self_signed)
+        if self_signed:
+            result["self signed: "] = True  #Phish
+        else:
+            result["self signed: "] = False
 
-    trusted_big_cas = [
-        "digicert", "globalsign", "sectigo", "godaddy", "let's encrypt", "amazon",
-        "geotrust", "thawte", "verisign", "comodo", "google trust services","cloudflare",
-        "microsoft", "network solutions", "entrust", "trustwave", "dotster", 
-    ]
-    if not any(ca in issuer_name.lower() for ca in trusted_big_cas):
-        result["trusted cert"] = False
+        trusted_big_cas = [
+            "digicert", "globalsign", "sectigo", "godaddy", "let's encrypt", "amazon",
+            "geotrust", "thawte", "verisign", "comodo", "google trust services","cloudflare",
+            "microsoft", "network solutions", "entrust", "trustwave", "dotster", 
+        ]
+        if not any(ca in issuer_name.lower() for ca in trusted_big_cas):
+            result["trusted cert"] = True
+        else:
+            result["trusted cert"] = False
 
-    print("issuer name: ", issuer_name)
+        print("issuer name: ", issuer_name)
 
-    print("host name: ", hostname)
-    print("subject name: ", subject_name)  
-    #if subject_name not in hostname:
-    if fnmatch.fnmatch(subject_name, hostname):
-        result["Host_subject_names: "] = True   #Phish
+        print("host name: ", hostname)
+        print("subject name: ", subject_name)  
+        #if subject_name not in hostname:
+        if fnmatch.fnmatch(subject_name, hostname):
+            result["Host_subject_names: "] = True   #Phish
 
 
     
     return result
     
-cert = https_certificate(url_phish2)
+cert = https_certificate(url_phish5)
 print("--------------------")
 for key, value in cert.items():
     print(f"{key.title()}: {value}")
