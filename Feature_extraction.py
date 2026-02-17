@@ -53,16 +53,8 @@ flags = {
 
 }
 
-"""
-def get_soup(url):
-    #try:
-    #print("Attempting to get ", url)
-    response = requests.get(url, timeout = 10)
-    print(BeautifulSoup(response.text, "html.parser"))
-    return BeautifulSoup(response.text, "html.parser"), response.text
-    #except:
-    #    return None, None
-"""
+
+
 def get_soup(url):
     try:
         response = requests.get(url, timeout=10)
@@ -749,12 +741,12 @@ def right_click(url): #document 1.3.3
         print("no HTML content")
         right_click = 1
         flags["Right_click"] = True
-        return right_click
+        return flags["Right_click"]
     if "event.button==2" in html_content or "contextmenu" in html_content.lower():
         print("Right click disabled")
         right_click = 1
         flags["Right_click"] = True
-        return right_click
+        return flags["Right_click"]
     else:
         print("Right click is NOT disabled")
         right_click = 0
@@ -823,7 +815,7 @@ def feature_extraction(url):
     #print("Total feature value: ", total)
     return features
 
-features = feature_extraction(url_phish4)
+features = feature_extraction(url_phish10)
 all_flags = {}
 
 
