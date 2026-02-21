@@ -12,6 +12,9 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+import pandas as pd
+from tqdm import tqdm
+
 
 url_random = "http://www.192.168.199.122.co.uk//@aaaaa/sfds56565-6mndasAKB1/sfsdsf-fsdfsfs/32.php"
 
@@ -41,7 +44,6 @@ url_legit10 = "https://www.redlineinventory.com"
 flags = {
     "Has_Ip" : False,
     "At_Sign" : False,
-    #"redirection" : False,
     "Url_Length" : False,
     "Dash_In_Domain" : False,
     "sub_multisub" : False,
@@ -62,7 +64,7 @@ def get_soup(url):
     except:
         return None, None
     
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def get_certificate(hostname, port=443): #document 1.1.8
     """
     Connecting to the server and retrieving the certificate.
@@ -83,7 +85,7 @@ def get_domain(url): #document 1.3.5
         return urlparse(url).netloc
     except:
         return ""
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 
 
 
@@ -106,7 +108,7 @@ def has_ip(url): #document 1.1.1
         return flags["Has_Ip"]
 #has_ip(url_random)
 
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def has_at_sign(url): #document 1.1.4
     '''
     if @ presence in URL then browser ignores everything and process the @
@@ -122,7 +124,7 @@ def has_at_sign(url): #document 1.1.4
     print("@ in url: ", at)
     return flags["At_Sign"]
     
-print("|||||||||||||||||||||||||||||||||||||||") # to be deleted later
+##---===>print("|||||||||||||||||||||||||||||||||||||||") # to be deleted later
 '''
 def redirection(url): #document 1.1.5
     pos = url.rfind("//") # rfind finds the last occurance
@@ -138,7 +140,7 @@ def redirection(url): #document 1.1.5
     print("redirection: ", redirect)
     return flags["redirection"]
 '''
-print("|||||||||||||||||||||||||||||||||||||||") 
+##---===>print("|||||||||||||||||||||||||||||||||||||||") 
 def url_length(url): # #document 1.1.2
     url_len = len(url)
     length = 0
@@ -152,7 +154,7 @@ def url_length(url): # #document 1.1.2
     print("Url_Length:", url_len , "|  length: ", length)
     return flags["Url_Length"]
 
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def dash_in_domain(url): # document 1.1.6
     host = urlparse(url).hostname
     dash_count = 0
@@ -166,7 +168,7 @@ def dash_in_domain(url): # document 1.1.6
     print("Dash_In_Domain: ", dash)
     return flags["Dash_In_Domain"]
 
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def sub_multisub_domain(url): #document 1.1.7
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
@@ -194,10 +196,10 @@ def sub_multisub_domain(url): #document 1.1.7
         dots_count = 1
         flags["Sub_Multisub"] = True  #phish
 
-    print("Sub_Multisub: ", dots_count)
+    ##---===>print("Sub_Multisub: ", dots_count)
     return flags["Sub_Multisub"]
 
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def http_https(url): #document 1.1.12
     if "https" in url:
         https = 0
@@ -206,38 +208,44 @@ def http_https(url): #document 1.1.12
         https = 1
         flags["HTTP_HTTPS"] = True
 
-    print("HTTP_HTTPS: ", https)
+    ##---===>print("HTTP_HTTPS: ", https)
     return flags["HTTP_HTTPS"]
 
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def https_certificate(url): #document 1.1.8
     """
     Evaluating the HTTPS and certificate properties to classify the URL
     """
-    print(url)
+    ##---===>print(url)
     parsed = urlparse(url)
-    flags = {}
+    flags = {
+        "HTTP_HTTPS" : False,
+        "No_Cert" : False,
+        "Issuer_Name" : False,
+        "Subject_Name" : False,
+        "Self_Signed" : False,
+        "Cert_Age_Days" : False,
+        "Cert_Validity_Days" : False,
+        "Trusted_Cert" : False,
+        "Host_subject_names" : True 
+    }
 
     # If not HTTPS → phishing
-    print("parsed.sceme = ",parsed.scheme)
-    #if parsed.scheme != "https":
-        #return 2  # Phishing
+    ##---===>print("parsed.scheme = ",parsed.scheme)
+
     if parsed.scheme == "https":
         flags["HTTP_HTTPS"] = False
     else:
         flags["HTTP_HTTPS"] = True
         
-
-
     hostname = parsed.hostname
     cert = get_certificate(hostname)
-    print("cert::::: ", cert)
+    ##---===>print("cert::::: ", cert)
     # If certificate cannot be retrieved → phishing
     flags["No_Cert"] = False
     if cert is None:
         flags["No_Cert"] = True
     else:
-
     # Extract certificate validity dates
         not_before = datetime.strptime(cert['notBefore'], "%b %d %H:%M:%S %Y %Z")
         not_after = datetime.strptime(cert['notAfter'], "%b %d %H:%M:%S %Y %Z")
@@ -248,7 +256,7 @@ def https_certificate(url): #document 1.1.8
         issuer = dict(x[0] for x in cert['issuer'])
         issuer_name = issuer.get('organizationName', '').lower()
         if issuer_name:
-            print("issuer name:",issuer_name)
+            ##---===>print("issuer name:",issuer_name)
             flags["Issuer_Name"] = False
         else:
             flags["Issuer_Name"] = True #no issuer name Phish
@@ -257,7 +265,7 @@ def https_certificate(url): #document 1.1.8
         subject = dict(x[0] for x in cert['subject'])
         subject_name = subject.get('commonName', '').lower()
         if subject_name:
-            print("subject name:",subject_name)
+            ##---===>print("subject name:",subject_name)
             flags["Subject_Name"] = False
         else:
             flags["Subject_Name"] = True  #no subject name Phish
@@ -267,7 +275,7 @@ def https_certificate(url): #document 1.1.8
         #print("self_signed--------->",self_signed)
         flags["Self_Signed"] = self_signed
 
-        print("cert age days: ", cert_age_days)
+        ##---===>print("cert age days: ", cert_age_days)
         if cert_age_days < 7: #30
             flags["Cert_Age_Days"] = True #very new - Phish
         #elif cert_age_days < 365:
@@ -275,13 +283,13 @@ def https_certificate(url): #document 1.1.8
         else:
             flags["Cert_Age_Days"] = False
 
-        print("cert_validity_days: ",cert_validity_days)
+        ##---===>print("cert_validity_days: ",cert_validity_days)
         if cert_validity_days < 14: ####90
             flags["Cert_Validity_Days"] = True    # Short-lived cert
         else:
             flags["Cert_Validity_Days"] = False
 
-        print("self signed: ", self_signed)
+        ##---===>print("self signed: ", self_signed)
         if self_signed:
             flags["Self_Signed"] = True  #Phish
         else:
@@ -297,23 +305,23 @@ def https_certificate(url): #document 1.1.8
         else:
             flags["Trusted_Cert"] = False
 
-        print("issuer name: ", issuer_name)
+        ##---===>print("issuer name: ", issuer_name)
 
-        print("host name: ", hostname)
-        print("subject name: ", subject_name)  
+        ##---===>print("host name: ", hostname)
+        ##---===>print("subject name: ", subject_name)  
         #if subject_name not in hostname:
         if fnmatch.fnmatch(subject_name, hostname):
-            flags["Host_subject_names: "] = True   #Phish
+            flags["Host_subject_names"] = True   #Phish
     return flags
 
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def is_cross_domain(page_url, iframe_src): #document 1.3.5
     if not iframe_src or iframe_src.startswith("#"):
         return False
     page_domain = get_domain(page_url)
-    print("---page_domain---", page_domain)
+    ##---===>print("---page_domain---", page_domain)
     iframe_domain = get_domain(iframe_src)
-    print("---iframe_domain---", iframe_domain)
+    ##---===>print("---iframe_domain---", iframe_domain)
     return iframe_domain and iframe_domain != page_domain
 
 def legit_iframes(src): # for lowering the false positives # document 1.3.5
@@ -336,8 +344,8 @@ def legit_iframes(src): # for lowering the false positives # document 1.3.5
     return False
 
 def iframe_redirection(url): # document 1.3.5
-    print("url: ", url)
-    print("----------------------")
+    ##---===>print("url: ", url)
+    ##---===>print("----------------------")
     soup, html = get_soup(url)
     
     flags = {
@@ -351,23 +359,23 @@ def iframe_redirection(url): # document 1.3.5
 
     if soup is None:
         flags["No_Soup"] = True
-        print("No Soup!!!")
+        ##---===>print("No Soup!!!")
         return flags
 
     iframes = soup.find_all("iframe")
     inputs = soup.find_all("input")
-    print("Soup is returned")
+    ##---===>print("Soup is returned")
 
 
     page_domain = get_domain(url)
 
     for iframe in iframes:
         src = iframe.get("src", "")
-        print("src:", src)
+        ##---===>print("src:", src)
         width = iframe.get("width", "")
-        print("width:", width)
+        ##---===>print("width:", width)
         height = iframe.get("height", "")
-        print("height:", height)
+        ##---===>print("height:", height)
         style = iframe.get("style", "").lower()
 
         if legit_iframes(src):
@@ -387,13 +395,13 @@ def iframe_redirection(url): # document 1.3.5
         # cross-domain iframe
         if is_cross_domain(url, src):
             flags["Cross_Domain_Iframe"] = True
-            print("url ", url)
-            print("src ", src)
+            ##---===>print("url ", url)
+            ##---===>print("src ", src)
 
         # nested iframes
         if iframe.find("iframe"):
             flags["Nested_Iframes"] = True
-            print("iframe ", iframe)
+            ##---===>print("iframe ", iframe)
 
         # no visible purpose / the iframe shows no content to user
         if not iframe.text.strip() and not src:
@@ -437,35 +445,35 @@ def domain_expiry(url): #document 1.1.9
 
 #domain_expiry(url_legit4)
 """
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def resolve_A_cname(url): #document 1.4.2
     resolved_ips = []
     visited = set()
     resolver = dns.resolver.Resolver()
-    print(resolver)
+    ##---===>print(resolver)
     while url not in visited:
         visited.add(url)
-        print(f"Resolving: {url}")
+        ##---===>print(f"Resolving: {url}")
         
         try:
             # 1. Trying to get A records
-            print("---1---")
+            ##---===>print("---1---")
             answer = resolver.resolve(url, "A")
             for rdata in answer:
                 resolved_ips.append(rdata.address)
-                print("resolved_ips: ",resolved_ips)
+                ##---===>print("resolved_ips: ",resolved_ips)
             return resolved_ips
 
         except dns.resolver.NoAnswer:
             # 2. checking the CNAME if there is no A record
             try:
-                print("---2---")
+                ##---===>print("---2---")
                 cname_answer = resolver.resolve(url, "CNAME")
                 # Update domain to the new target and loop again
                 url = str(cname_answer[0].target).rstrip(".")
-                print("CNAME: ",cname_answer)
+                ##---===>print("CNAME: ",cname_answer)
             except dns.resolver.NoAnswer:
-                print("No A or CNAME record found.")
+                ##---===>print("No A or CNAME record found.")
                 break
         except dns.resolver.NXDOMAIN:
             print(f"Domain {url} does not exist.")
@@ -489,11 +497,17 @@ def parent_domain(url): #document 1.4.2
 def dns_records(url): #document 1.4.2
     #print("domain: ",domain)
     results = {}
-    flags = {}
+    flags = {
+        "A_Record" : False,
+        "AAAA_Record" : False,
+        "MX_Record" : False,
+        "NS_Record" : False,
+        "Age_Days" : False
+    }
 
     domain = parent_domain(url)
     results["domain"] = domain
-    print("parent domain: ",results["domain"])
+    ##---===>print("parent domain: ",results["domain"])
 
 # 1. Resolving A records with CNAME 
     ips = resolve_A_cname(domain)
@@ -523,14 +537,14 @@ def dns_records(url): #document 1.4.2
     except Exception as e:
         print(f"Unexpected DNS error: {e}")
 
-    print("AAAA_record:", results["AAAA_record"])
+    ##---===>print("AAAA_record:", results["AAAA_record"])
 
 
 # 3. Checking MX on parent domain
     try:
         mx_records = dns.resolver.resolve(domain, "MX")
         results["MX_record"] = [mx.exchange.to_text() for mx in mx_records]
-        print("MX_Records", results["MX_record"])
+        ##---===>print("MX_Records", results["MX_record"])
         flags["MX_Record"] = False
     except:
         results["MX_record"] = None
@@ -540,7 +554,7 @@ def dns_records(url): #document 1.4.2
     try:
         ns_records = dns.resolver.resolve(domain, "NS")
         results["NS_record"] = [ns.to_text() for ns in ns_records]
-        print("NS_record: ", results["NS_record"])
+        ##---===>print("NS_record: ", results["NS_record"])
         flags["NS_Record"] = False
     except:
         results["NS_record"] = None
@@ -559,7 +573,7 @@ def dns_records(url): #document 1.4.2
 
         age_days = (datetime.now() - creation_date).days
         results["domain_age_days"] = age_days
-        print("Domain age days: ", age_days)
+        ##---===>print("Domain age days: ", age_days)
         if age_days > 7:
             flags["Age_Days"] = False
     except:
@@ -567,9 +581,9 @@ def dns_records(url): #document 1.4.2
         flags["Age_Days"] = True
     # output
 
-    print("-------------------------------|")
+    ##---===>print("-------------------------------|")
     return flags
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 
 keywords = [
     "login", "log-in", "signin", "sign-in", "verify", "update", "secure", "verification", "portal", "authenticate", "checkpoint", "access",
@@ -614,140 +628,139 @@ url_shorteners = [
 ]
 
 def url_path(url):
-    print(url, "\n")
+    ##---===>print(url, "\n")
     parsed = urlparse(url)
-    print("Parsed: \n", parsed, "\n")
+    ##---===>print("Parsed: \n", parsed, "\n")
     domain = parsed.netloc.lower()
-    print("Domain: ", domain)
+    ##---===>print("Domain: ", domain)
     path = parsed.path.lower()
-    print("path: ", path)
+    ##---===>print("path: ", path)
     query = parsed.query.lower()
-    print("Query: ", query, "\n\n")
+    ##---===>print("Query: ", query, "\n\n")
 
     path_result = {}
     
     #short url
+    path_result["URL_Short"] = False
     for us in url_shorteners:
         if us in domain:
-            print("url shortener used: ", us)
+            ##---===>print("url shortener used: ", us)
             path_result["URL_Short"] = True
-        else:
-            path_result["URL_Short"] = False
-    print("path_result[URL_Short]:", path_result["URL_Short"], "\n")
+    ##---===>print("path_result[URL_Short]:", path_result["URL_Short"], "\n")
 
     #using free domains as a legit base
+    path_result["Free_Domain"] = False
     for fd in free_domains:
         if fd in domain:
-            print("free domain used: ", fd)
+            ##---===>print("free domain used: ", fd)
             path_result["Free_Domain"] = True
             break
-        else:
-            path_result["Free_Domain"] = False
-    print("path_result[Free_Domain]:", path_result["Free_Domain"], "\n")
+    ##---===>print("path_result[Free_Domain]:", path_result["Free_Domain"], "\n")
 
     #using phishing keyword
     path_result["Phish_Keyword"] = False
     for pk in keywords:
         if pk in path:
-            print("Phish keyword used: ", pk)
+            ##---===>print("Phish keyword used: ", pk)
             path_result["Phish_Keyword"] = True
         
-    print("path_result[Phish_Keyword]:", path_result["Phish_Keyword"], "\n")
+    ##---===>print("path_result[Phish_Keyword]:", path_result["Phish_Keyword"], "\n")
 
     #suspecious file extensions in path
+    path_result["File_Extension"] = False
     for ext in extentions:
         if ext in path or ext in domain:
-            print("-----------------extension used in path:", ext)
+            ##---===>print("-----------------extension used in path:", ext)
             path_result["File_Extension"] = True
             break
-        else:
-            path_result["File_Extension"] = False
-    print("path_result[File_Extension]: ", path_result["File_Extension"], "\n")
+    ##---===>print("path_result[File_Extension]: ", path_result["File_Extension"], "\n")
 
     #long random path segments
     path_result["Segment"] = False
     for seg in path.split("/"):
         if len(seg) > 18 and re.search(r"\d", seg):
-            print("Segment: ", seg)
+            ##---===>print("Segment: ", seg)
             path_result["Segment"] = True
             break
-        print("path_result[Segment]: ", path_result["Segment"], "\n")
+    ##---===>print("path_result[Segment]: ", path_result["Segment"], "\n")
 
     #excessive digits in path
+    path_result["Digits"] = False
     digits = sum(c.isdigit() for c in path)
     if digits > 5:
-        print("Digits: ", digits)
+        ##---===>print("Digits: ", digits)
         path_result["Digits"] = True
-        print("path_result[Digits]: ", path_result["Digits"], "\n")
+        ##---===>print("path_result[Digits]: ", path_result["Digits"], "\n")
 
     #query parameters
     path_result["Query"] = False
     for q in queries:
         if q in query:
-            print("Query used: ", q)
+            ##---===>print("Query used: ", q)
             path_result["Query"] = True
-    print("path_result[Query]", path_result["Query"], "\n")
+    ##---===>print("path_result[Query]", path_result["Query"], "\n")
 
     #path depth by each segments seprated by /
     depth = 0
+    path_result["Depth_Segments"] = False
     for s in path.split("/"):
         depth += 1
     if depth > 3:
-        print("Depth_Segments", depth)
+        ##---===>print("Depth_Segments", depth)
         path_result["Depth_Segments"] = True
-        print("path_result[Depth_Segments]", path_result["Depth_Segments"], "\n")
+        ##---===>print("path_result[Depth_Segments]", path_result["Depth_Segments"], "\n")
 
     return path_result
 
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def domain_age(url):    # document 1.4.1
     try:
         domain = whois.whois(tldextract.extract(url).registered_domain)
-        print("domain: ", domain)
+        ##---===>print("domain: ", domain)
         creation_date = domain.creation_date
-        print("creation_date: ", creation_date)
+        ##---===>print("creation_date: ", creation_date)
         if isinstance(creation_date, list): # if the expiry_date exist as list pick the first item
             creation_date = creation_date[0]
         today = datetime.now()
-        print("today : ",today)
+        ##---===>print("today : ",today)
         age_days = (today - creation_date).days
-        print("Month left: ", age_days)
+        ##---===>print("days left: ", age_days)
         if age_days > 7:
             domain_age = 0 #legit
-            print("Legit")
+            ##---===>print("Legit")
             flags["Domain_Age"] = False
             return flags["Domain_Age"]
         else:
             domain_age = 1 #phish
-            print("Phish")
+            ##---===>print("Phish")
             flags["Domain_Age"] = True
             return flags["Domain_Age"]
     except:
         domain_age = 2 # needs to be reviewed and discussed
-        print("Suspecious")
+        ##---===>print("Suspecious")
         flags["Domain_Age"] = True #more likely there is no record or timeout
         return flags["Domain_Age"]
 
 #domain_age(url_phish3)
 
     
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def right_click(url): #document 1.3.3
     _, html_content = get_soup(url)
     if not html_content: 
-        print("no HTML content")
+        ##---===>print("no HTML content")
         right_click = 1
         flags["Right_Click"] = True
         return flags["Right_Click"]
     if "event.button==2" in html_content or "contextmenu" in html_content.lower():
-        print("Right click disabled")
+        ##---===>print("Right click disabled")
         right_click = 1
         flags["Right_Click"] = True
         return flags["Right_Click"]
     else:
-        print("Right click is NOT disabled")
+        ##---===>print("Right click is NOT disabled")
         right_click = 0
-        print("right_click: ", right_click)
+        ##---===>print("right_click: ", right_click)
         flags["Right_Click"] = False
         return flags["Right_Click"]
 
@@ -760,26 +773,28 @@ def custom_status_bar(url):    #Document 1.3.2
     #print(get_soup(url))
     if not html_content:
         status_bar = 1
-        print("No html content, Phish",status_bar)
+        ##---===>print("No html content, Phish",status_bar)
         flags["Custom_Status_Bar"] = True
         return flags["Custom_Status_Bar"]
     if "onmouseover" in html_content.lower() and "window.status" in html_content.lower():
         status_bar = 1
-        print("Mouseover or Window status, Phish",status_bar)
+        ##---===>print("Mouseover or Window status, Phish",status_bar)
         flags["Custom_Status_Bar"] = True
         return flags["Custom_Status_Bar"]
     else:
         status_bar = 0
-        print("No status bar customized, Legit",status_bar)
+        ##---===>print("No status bar customized, Legit",status_bar)
         flags["Custom_Status_Bar"] = False
         return flags["Custom_Status_Bar"]
 
 #custom_status_bar(url_legit5)
 
 
-print("|||||||||||||||||||||||||||||||||||||||")
+##---===>print("|||||||||||||||||||||||||||||||||||||||")
 # the main extraction function 
 def feature_extraction(url, label):
+    print("--------------")
+    print(url)
     features={}
     
     features["Has_Ip"] = has_ip(url)
@@ -827,34 +842,55 @@ def feature_extraction(url, label):
     features["Query"] = path["Query"]
     features["Depth_Segments"] = path["Depth_Segments"]
 
-    features["Domain Age"] = domain_age(url) #
+    features["Domain_Age"] = domain_age(url) #
     features["Right_Click"] = right_click(url) #
-    features["Custom status bar"] = custom_status_bar(url) #
+    features["Custom_status_bar"] = custom_status_bar(url) #
 
     features["Label"] = label   #Phish / Legit
 
 
-    print("------------------------------------------------------")
-    print(url)
-    print("features: ",features)
+    ##---===>
+    ##---===>print("features: ",features)
 
-    print("------------------------------------------------------")
     #total = sum(features.values())
     #print("Total feature value: ", total)
     return features
 
-features = feature_extraction(url_phish10, 0)
-all_flags = {}
+''' #printing a test url
+result = feature_extraction(url_phish10, 1)
 
-
-#print(features)
-
-for key, value in features.items():
-    if isinstance(value, dict):
-        for sub_key, sub_value in value.items():
-            all_flags[f"{sub_key}"] = sub_value
-    else:
-        all_flags[key] = value
-
-for key, value in all_flags.items():
+for key, value in result.items():
     print(f"{key.title()}: {value}")
+'''
+
+### importing the csv's and trying the feature extraction
+#Phish_csv = pd.read_csv("Content/CSVs/phish_urls_extracted_10000.csv")
+#Legit_csv = pd.read_csv("Content/CSVs/Legit_urls_extracted_10000.csv", header=None)
+
+Phish_csv_path = "Content/CSVs/phish_urls_extracted_10000.csv"
+Legit_csv_path = "Content/CSVs/Legit_urls_extracted_10000.csv"
+Phish_TEST_path = "Content/CSVs/phish_urls_FOR_TEST.csv"
+
+def process_urls_csv(csv_path, label, url_column_name="url"):
+    df = pd.read_csv(csv_path)
+
+    if url_column_name not in df.columns:
+        df.columns = ["url"]
+
+    urls = df["url"].dropna().tolist()
+
+    dataset = []
+
+    for url in tqdm(urls):
+        try:
+            features = feature_extraction(url, label)
+            dataset.append(features)
+        except Exception as e:
+            print(f"Error processing {url}: {e}")
+    
+    return pd.DataFrame(dataset)
+
+
+phish_features = process_urls_csv(Phish_TEST_path, label = 1)
+
+phish_features.to_csv("Content/CSVs/Phish_features_processed.csv", index = False)
