@@ -1,12 +1,14 @@
+'''
+Docstring for notes
 def have_ip(url): #document 1.1.1                           URL_Based
 def have_at_sign(url): #document 1.1.4                      URL_Based
-def redirection(url): #document 1.1.5                       URL_Based
+REPLACE###def redirection(url): #document 1.1.5                       URL_Based
 def url_length(url): # #document 1.1.2                      URL_Based
 def dash_in_domain(url): # document 1.1.6                   URL_Based
 def sub_multisub_domain(url): #document 1.1.7               URL_Based
 def http_https(url): #document 1.1.12                       URL_Based
-def https_cert_url(url): #document 1.1.8                    Domain_Based
-def has_dns(url): #document 1.4.2                           Domain_Based
+REPLACE###def https_cert_url(url): #document 1.1.8                    Domain_Based
+REPLACE###def has_dns(url): #document 1.4.2                           Domain_Based
 def domain_expiry(url): #document 1.1.9                     Domain_Based
 def domain_age(url):    # document 1.4.1                    Domain_Based
 def feature_right_click(url): #document 1.3.3               HTML_JS
@@ -23,3 +25,44 @@ functions for number of dots - dashes -
 how long machine learning takes time?
 using google colab
 methodology update
+def sub_multisub_domain(url): #needs review amazon.co.uk ??
+dash count
+change the TimeZone
+
+
+
+path_result["Depth_Segments"] = True
+
+"A_Record" = False
+"AAAA_Record" = True
+"MX_Record" = False
+"NS_Record" = False
+"Age_Days" = False
+
+results["domain"] = domain
+
+
+"HTTP_HTTPS"] = False
+"No_Cert"] = False
+"Issuer_Name"] = False
+"Subject_Name"] = False
+"Self_Signed"] = False
+"Cert_Age_Days"] = False
+"Cert_Validity_Days"] = False
+"Trusted_Cert"] = False
+"Host_subject_names"] = True 
+
+
+##---===>
+Errors to be fixed:
+
+error
+  1%|▉                                                                                               | 1/99 [00:01<02:05,  1.28s/it]/home/kali/Desktop/Phishing Detection/Feature_extraction.py:250: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  cert_age_days = (datetime.utcnow() - not_before).days
+
+  
+
+Write and categorize the address bar - domain base and HTML/JAVA Script features
+
+copy the features definition from feature extraction file to google colab file
+'''

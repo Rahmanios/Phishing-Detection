@@ -52,7 +52,6 @@ flags = {
     "domain_age" : False,
     "right_click" : False,
     "custom_status_bar" : False
-
 }
 
 
@@ -87,9 +86,6 @@ def get_domain(url): #document 1.3.5
         return ""
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 
-
-
-
 def has_ip(url): #document 1.1.1
     '''
     If there is IP instead of domain name, its likely someone is trying to steal personal information
@@ -98,12 +94,12 @@ def has_ip(url): #document 1.1.1
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b' # raw string 
     if re.search(ip_pattern,host):
         ip = 1
-        print("Has_Ip: ", ip)
+        #print("Has_Ip: ", ip)
         flags["Has_Ip"] = True
         return flags["Has_Ip"]
     else:
         ip = 0
-        print("No IP: ", ip)
+        #print("No IP: ", ip)
         flags["Has_Ip"] = False
         return flags["Has_Ip"]
 #has_ip(url_random)
@@ -121,7 +117,7 @@ def has_at_sign(url): #document 1.1.4
         at = 0
         flags["At_Sign"] = False
 
-    print("@ in url: ", at)
+    #print("@ in url: ", at)
     return flags["At_Sign"]
     
 ##---===>print("|||||||||||||||||||||||||||||||||||||||") # to be deleted later
@@ -151,7 +147,7 @@ def url_length(url): # #document 1.1.2
         length = 0
         flags["Url_Length"] = False
     
-    print("Url_Length:", url_len , "|  length: ", length)
+    #print("Url_Length:", url_len , "|  length: ", length)
     return flags["Url_Length"]
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
@@ -165,14 +161,14 @@ def dash_in_domain(url): # document 1.1.6
         dash = 0
         flags["Dash_In_Domain"] = False
     
-    print("Dash_In_Domain: ", dash)
+    #print("Dash_In_Domain: ", dash)
     return flags["Dash_In_Domain"]
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def sub_multisub_domain(url): #document 1.1.7
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
-    print("domain: ", domain)
+    #print("domain: ", domain)
     if domain.startswith("www."):
         domain = domain[4:] #removing the www. part
     #print("domain without www.===>>", domain)
@@ -186,7 +182,7 @@ def sub_multisub_domain(url): #document 1.1.7
     domain = ".".join(parts) #converting back to string
     #print("NEW DOMAIN::",domain)
     dots = domain.count(".")
-    print("dots: ", dots)
+    #print("dots: ", dots)
     if dots == 1:
         dots_count = 0
         flags["Sub_Multisub"] = False  #legit
@@ -490,7 +486,7 @@ def parent_domain(url): #document 1.4.2
     Extracting the registered domain 
     """
     ext = tldextract.extract(url)
-    print("DOMAIN: ",f"{ext.domain}.{ext.suffix}")
+    #print("DOMAIN: ",f"{ext.domain}.{ext.suffix}")
     return f"{ext.domain}.{ext.suffix}"
 
 
@@ -793,10 +789,11 @@ def custom_status_bar(url):    #Document 1.3.2
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 # the main extraction function 
 def feature_extraction(url, label):
-    print("--------------")
-    print(url)
+    #print("--------------")
+    print(url, "\n")
     features={}
     
+    features["url"] = url
     features["Has_Ip"] = has_ip(url)
     features["At_Sign"] = has_at_sign(url)
     features["Url_Length"] = url_length(url)
@@ -870,6 +867,7 @@ for key, value in result.items():
 Phish_csv_path = "Content/CSVs/phish_urls_extracted_10000.csv"
 Legit_csv_path = "Content/CSVs/Legit_urls_extracted_10000.csv"
 Phish_TEST_path = "Content/CSVs/phish_urls_FOR_TEST.csv"
+Legit_TEST_path = "Content/CSVs/LEGIT_urls__FOR_TEST.csv"
 
 def process_urls_csv(csv_path, label, url_column_name="url"):
     df = pd.read_csv(csv_path)
@@ -884,6 +882,7 @@ def process_urls_csv(csv_path, label, url_column_name="url"):
     for url in tqdm(urls):
         try:
             features = feature_extraction(url, label)
+            features["url"] = url
             dataset.append(features)
         except Exception as e:
             print(f"Error processing {url}: {e}")
@@ -891,6 +890,6 @@ def process_urls_csv(csv_path, label, url_column_name="url"):
     return pd.DataFrame(dataset)
 
 
-phish_features = process_urls_csv(Phish_TEST_path, label = 1)
+phish_features = process_urls_csv(Legit_TEST_path, label = 0)
 
-phish_features.to_csv("Content/CSVs/Phish_features_processed.csv", index = False)
+phish_features.to_csv("Content/CSVs/Legit_features_processed.csv", index = False)
