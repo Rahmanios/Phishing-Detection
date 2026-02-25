@@ -890,6 +890,8 @@ def process_urls_csv(csv_path, label, url_column_name="url"):
     return pd.DataFrame(dataset)
 
 
-phish_features = process_urls_csv(Legit_TEST_path, label = 0)
+#phish_features = process_urls_csv(Phish_csv_path, label = 1)
+#phish_features.to_csv("Content/CSVs/Phish_features_PROCESSED.csv", index = False)
 
-phish_features.to_csv("Content/CSVs/Legit_features_processed.csv", index = False)
+legit_features = process_urls_csv(Legit_csv_path, label = 0)
+legit_features.to_csv("Content/CSVs/Legit_features_PROCESSED.csv", index = False)
