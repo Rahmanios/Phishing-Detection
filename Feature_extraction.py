@@ -860,9 +860,6 @@ for key, value in result.items():
     print(f"{key.title()}: {value}")
 '''
 
-### importing the csv's and trying the feature extraction
-#Phish_csv = pd.read_csv("Content/CSVs/phish_urls_extracted_10000.csv")
-#Legit_csv = pd.read_csv("Content/CSVs/Legit_urls_extracted_10000.csv", header=None)
 
 Phish_csv_path = "Content/CSVs/phish_urls_extracted_10000.csv"
 Legit_csv_path = "Content/CSVs/Legit_urls_extracted_10000.csv"
