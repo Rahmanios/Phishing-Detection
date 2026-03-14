@@ -868,8 +868,8 @@ for key, value in result.items():
 
 Phish_csv_path = "Content/CSVs/phish_urls_extracted_10000.csv"
 Legit_csv_path = "Content/CSVs/Legit_urls_extracted_10000.csv"
-Phish_TEST_path = "Content/CSVs/phish_urls_FOR_TEST.csv"
-Legit_TEST_path = "Content/CSVs/LEGIT_urls__FOR_TEST.csv"
+Phish_TEST_path = "Content/CSVs/Test_CSVs/phish_urls_FOR_TEST.csv"
+Legit_TEST_path = "Content/CSVs/Test_CSVs/LEGIT_urls__FOR_TEST.csv"
 
 def process_urls_csv(csv_path, label, url_column_name="url"):
     df = pd.read_csv(csv_path)

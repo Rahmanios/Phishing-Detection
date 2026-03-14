@@ -283,8 +283,8 @@ print("---------------------\n")
 Phish_url_10000 = "Content/CSVs/phish_urls_extracted_10000.csv"
 Legit_url_10000 = "Content/CSVs/Legit_urls_extracted_10000.csv"
 
-phish_urls_for_test = "Content/CSVs/phish_urls_FOR_TEST.csv"
-Legit_urls_for_test = "Content/CSVs/LEGIT_urls__FOR_TEST.csv"
+phish_urls_for_test = "Content/CSVs/Test_CSVs/phish_urls_FOR_TEST.csv"
+Legit_urls_for_test = "Content/CSVs/Test_CSVs/LEGIT_urls__FOR_TEST.csv"
 def process_urls_NLTK(csv_path, label, url_column_name="url"):
     df = pd.read_csv(csv_path)
 

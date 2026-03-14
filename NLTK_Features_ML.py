@@ -17,7 +17,7 @@ combined_csvs.to_csv("Content/CSVs/Phish_Legit_NLTK_combined.csv", index=False)
 
 # Load the combined feature csv 
 df = pd.read_csv("Content/CSVs/Phish_Legit_NLTK_combined.csv")
-#df = pd.read_csv("Content/CSVs/NLTK_Phish_test_PROCESSED.csv") #test
+#df = pd.read_csv("Content/CSVs/Test_CSVs/NLTK_Phish_test_PROCESSED.csv") #test
 
 
 print("Dataset shape (rows and columns --->):", df.shape)
