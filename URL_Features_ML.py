@@ -17,8 +17,6 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 
 # Load the combined feature csv 
 df = pd.read_csv("Content/CSVs/Phish_legit_features_combined.csv")
-#df = pd.read_csv("Content/CSVs/NLTK_Phish_test_PROCESSED.csv") #test
-
 
 print("Dataset shape (rows and columns --->):", df.shape)
 print("\nFirst 5 rows:")
