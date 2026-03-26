@@ -91,7 +91,7 @@ def get_domain(url): #document 1.3.5
         return ""
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 
-def has_ip(url): #document 1.1.1
+def has_ip(url): #document 1.1.1 address bar feature
     '''
     If there is IP instead of domain name, its likely someone is trying to steal personal information
     '''
@@ -110,7 +110,7 @@ def has_ip(url): #document 1.1.1
 #has_ip(url_random)
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
-def has_at_sign(url): #document 1.1.4
+def has_at_sign(url): #document 1.1.4 address bar feature
     '''
     if @ presence in URL then browser ignores everything and process the @
     '''
@@ -125,24 +125,8 @@ def has_at_sign(url): #document 1.1.4
     #print("@ in url: ", at)
     return flags["At_Sign"]
     
-##---===>print("|||||||||||||||||||||||||||||||||||||||") # to be deleted later
-'''
-def redirection(url): #document 1.1.5
-    pos = url.rfind("//") # rfind finds the last occurance
-    redirect = 0
-    if pos > 6:
-        redirect=1
-        flags["redirection"] = True
-    else:
-        redirect=0
-        
-        flags["redirection"] = False
-
-    print("redirection: ", redirect)
-    return flags["redirection"]
-'''
 ##---===>print("|||||||||||||||||||||||||||||||||||||||") 
-def url_length(url): # #document 1.1.2
+def url_length(url): # #document 1.1.2 address bar feature
     url_len = len(url)
     length = 0
     if(url_len > 54):
@@ -156,7 +140,7 @@ def url_length(url): # #document 1.1.2
     return flags["Url_Length"]
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
-def dash_in_domain(url): # document 1.1.6
+def dash_in_domain(url): # document 1.1.6 address bar feature
     host = urlparse(url).hostname
     dash_count = 0
     if "-" in host:
@@ -170,7 +154,7 @@ def dash_in_domain(url): # document 1.1.6
     return flags["Dash_In_Domain"]
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
-def sub_multisub_domain(url): #document 1.1.7
+def sub_multisub_domain(url): #document 1.1.7 address bar feature
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
     #print("domain: ", domain)
@@ -213,7 +197,7 @@ def http_https(url): #document 1.1.12
     return flags["HTTP_HTTPS"]
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
-def https_certificate(url): #document 1.1.8
+def https_certificate(url): #document 1.1.8 address bar feature
     """
     Evaluating the HTTPS and certificate properties to classify the URL
     """
@@ -607,20 +591,8 @@ queries = [
 ]
 
 free_domains = [
-    "docs.google.com",
-    "sites.google.com",
-    "dropbox.com",
-    "firebaseapp.com",
-    "framer.app",
-    "webcindario.com",
-    "campaign-archive.com",
-    "new.express.adobe.com",
-    "jotform.com",
-    "hsforms.com",
-    "forms.office.com",
-    "ipfs.io",
-    "ipfs.best-practice.se"
-    "adobe.com/webpage"
+    "docs.google.com", "sites.google.com", "dropbox.com", "firebaseapp.com", "framer.app", "webcindario.com", "campaign-archive.com",
+    "new.express.adobe.com", "jotform.com", "hsforms.com", "forms.office.com", "ipfs.io", "ipfs.best-practice.se", "adobe.com/webpage"
 ]
 
 url_shorteners = [
@@ -851,11 +823,6 @@ def feature_extraction(url, label):
     features["Label"] = label   #Phish / Legit
 
 
-    ##---===>
-    ##---===>print("features: ",features)
-
-    #total = sum(features.values())
-    #print("Total feature value: ", total)
     return features
 
 ''' #printing a test url
