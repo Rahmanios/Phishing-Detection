@@ -112,7 +112,7 @@ def has_ip(url): #document 1.1.1 address bar feature
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def has_at_sign(url): #document 1.1.4 address bar feature
     '''
-    if @ presence in URL then browser ignores everything and process the @
+    checks if @ presence in URL then browser ignores everything and process the @
     '''
     if "@" in url:
         at = 1
@@ -127,6 +127,10 @@ def has_at_sign(url): #document 1.1.4 address bar feature
     
 ##---===>print("|||||||||||||||||||||||||||||||||||||||") 
 def url_length(url): # #document 1.1.2 address bar feature
+    """
+    Gets the length of URL and sets the flags["Url_Length"] to boolean value of True or False
+    if the length is more or less than 54
+    """
     url_len = len(url)
     length = 0
     if(url_len > 54):
@@ -155,28 +159,50 @@ def dash_in_domain(url): # document 1.1.6 address bar feature
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def sub_multisub_domain(url): #document 1.1.7 address bar feature
+    """
+    Analyzes the URL's domain structure to detect suspicious subdomains.
+
+    This feature carries out phishing detection logic ( Address bar feature 1.1.7 ). 
+    by counting the dots in the domain with the prefix of the www. removed and 
+    country code top-level domain (ccTLD such as .uk, .jp). 
+
+    The reasoning is along the following lines:
+    - 0 to 1 dots (post processing): Legitimate (returns False)
+    - 2 or above dots: Potential Phishing/Multi-subdomain (True)
+
+    Args:
+        url (str): The complete URL that is to be analyzed.
+
+    Returns:
+        bool: 
+            - False (0): Normative (Normal domain/subdomain count).
+            - True (1): Phishing (Too many subdomains).
+
+    Side Effects:
+        Adds a key to a global dictionary, using the key Sub_Multisub.
+
+    Note:
+        The function explicitly deals with ccTLDs, and removes the final portion. 
+        of the domain should it have a set of two characters only (e.g., '.co.uk' 
+        is worked to as '.co' in the count).
+    """
     parsed_url = urlparse(url)
     domain = parsed_url.netloc
     #print("domain: ", domain)
     if domain.startswith("www."):
         domain = domain[4:] #removing the www. part
-    #print("domain without www.===>>", domain)
     parts = domain.split(".")   #spliting each part of the domain 
-    #print("parts: ", parts)
+    
     #print(len(parts [-1]))
     if len(parts[-1]) == 2: #is the last part a 2letter country code?  country-code top-level domains (ccTLD) length ==2
         parts = parts[:-1]  #take the last cc
-        #print("if parts:", parts)
-    #print("PARTS::::",parts)
+        
     domain = ".".join(parts) #converting back to string
-    #print("NEW DOMAIN::",domain)
     dots = domain.count(".")
     #print("dots: ", dots)
     if dots == 1:
         dots_count = 0
         flags["Sub_Multisub"] = False  #legit
-    #elif dots == 2:
-        #dots_count = 2 #lets consider 2 as suspicious until further decision
     else:
         dots_count = 1
         flags["Sub_Multisub"] = True  #phish
@@ -186,6 +212,9 @@ def sub_multisub_domain(url): #document 1.1.7 address bar feature
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def http_https(url): #document 1.1.12
+    """
+    Checks if the URL has HTTPS  
+    """
     if "https" in url:
         https = 0
         flags["HTTP_HTTPS"] = False
@@ -193,15 +222,38 @@ def http_https(url): #document 1.1.12
         https = 1
         flags["HTTP_HTTPS"] = True
 
-    ##---===>print("HTTP_HTTPS: ", https)
     return flags["HTTP_HTTPS"]
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def https_certificate(url): #document 1.1.8 address bar feature
     """
-    Evaluating the HTTPS and certificate properties to classify the URL
+    Analyzes the HTTPS and SSL/TLS certificate properties to identify phishing indicators.
+
+    This function implements phishing detection logic (Address Bar Feature 1.1.8). 
+    It fetches the SSL certificate for the given URL and evaluates it against several 
+    risk factors including certificate age, trusted Certificate Authorities (CAs), 
+    and self-signing.
+
+    Args:
+        url (str): The full URL string of the site to evaluate.
+
+    Returns:
+        dict: A dictionary of boolean flags where 'True' typically indicates a 
+              suspicious/phishing attribute:
+            - HTTP_HTTPS (bool): True if the scheme is not HTTPS.
+            - No_Cert (bool): True if the SSL certificate could not be retrieved.
+            - Issuer_Name (bool): True if the issuer organization name is missing.
+            - Subject_Name (bool): True if the common name is missing.
+            - Self_Signed (bool): True if the issuer and subject are the same.
+            - Cert_Age_Days (bool): True if the certificate is very new (< 7 days).
+            - Cert_Validity_Days (bool): True if the total lifespan is short (< 14 days).
+            - Trusted_Cert (bool): True if the issuer is not in the 'trusted_big_cas' list.
+            - Host_subject_names (bool): True if the subject name matches the hostname.
+
+    Note:
+        The function relies on a helper `get_certificate(hostname)` and expects 
+        standard library imports like `datetime`, `fnmatch`, and `urlparse`.
     """
-    ##---===>print(url)
     parsed = urlparse(url)
     flags = {
         "HTTP_HTTPS" : False,
@@ -215,9 +267,6 @@ def https_certificate(url): #document 1.1.8 address bar feature
         "Host_subject_names" : True 
     }
 
-    # If not HTTPS → phishing
-    ##---===>print("parsed.scheme = ",parsed.scheme)
-
     if parsed.scheme == "https":
         flags["HTTP_HTTPS"] = False
     else:
@@ -226,7 +275,6 @@ def https_certificate(url): #document 1.1.8 address bar feature
     hostname = parsed.hostname
     cert = get_certificate(hostname)
     ##---===>print("cert::::: ", cert)
-    # If certificate cannot be retrieved → phishing
     flags["No_Cert"] = False
     if cert is None:
         flags["No_Cert"] = True
@@ -292,15 +340,23 @@ def https_certificate(url): #document 1.1.8 address bar feature
 
         ##---===>print("issuer name: ", issuer_name)
 
-        ##---===>print("host name: ", hostname)
-        ##---===>print("subject name: ", subject_name)  
-        #if subject_name not in hostname:
         if fnmatch.fnmatch(subject_name, hostname):
             flags["Host_subject_names"] = True   #Phish
     return flags
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def is_cross_domain(page_url, iframe_src): #document 1.3.5
+    """
+    Checks if an iframe source URL belongs to a different domain than the parent page.
+
+    Args:
+        page_url (str): The URL of the main parent webpage.
+        iframe_src (str): The 'src' attribute value of the iframe.
+
+    Returns:
+        bool: True if the iframe points to a different domain (excluding anchors), 
+              False if domains match or the source is invalid/local.
+    """
     if not iframe_src or iframe_src.startswith("#"):
         return False
     page_domain = get_domain(page_url)
@@ -310,6 +366,18 @@ def is_cross_domain(page_url, iframe_src): #document 1.3.5
     return iframe_domain and iframe_domain != page_domain
 
 def legit_iframes(src): # for lowering the false positives # document 1.3.5
+    """
+    Determines if an iframe source belongs to a known legitimate third-party service.
+
+    This helps filter out common cross-domain iframes used for reCAPTCHA, 
+    social media embeds, payment gateways, and video hosting.
+
+    Args:
+        src (str): The 'src' attribute of the iframe to check.
+
+    Returns:
+        bool: True if the source matches a known legitimate domain, False otherwise.
+    """
     legit_cross_domains = [
         "googletagmanager.com",
         "google.com/recaptcha",
@@ -329,8 +397,31 @@ def legit_iframes(src): # for lowering the false positives # document 1.3.5
     return False
 
 def iframe_redirection(url): # document 1.3.5
-    ##---===>print("url: ", url)
-    ##---===>print("----------------------")
+    """
+    Analyzes webpage iframes for phishing and clickjacking indicators.
+
+    This function scans all <iframe> tags in the HTML to detect suspicious 
+    behavior, such as hidden iframes, cross-domain sources (excluding a 
+    whitelist), and potential UI overlays designed to steal credentials.
+
+    Args:
+        url (str): The URL of the webpage to analyze.
+
+    Returns:
+        dict: A dictionary of boolean flags where 'True' indicates a risk factor:
+            - No_Soup (bool): True if the HTML content could not be parsed.
+            - Invisible_Iframe (bool): True if hidden via CSS or 0-size dimensions.
+            - Cross_Domain_Iframe (bool): True if content is pulled from an 
+              external untrusted domain.
+            - Nested_Iframes (bool): True if an iframe contains another iframe.
+            - No_Visible_Purpose (bool): True if the iframe lacks both text and a source.
+            - Overlay_Behavior (bool): True if an absolute/fixed iframe exists 
+              on a page with sensitive input fields (potential Clickjacking).
+
+    Note:
+        Relies on 'get_soup(url)' for HTML parsing and 'get_domain(url)' 
+        for domain extraction.
+    """
     soup, html = get_soup(url)
     
     flags = {
@@ -356,11 +447,8 @@ def iframe_redirection(url): # document 1.3.5
 
     for iframe in iframes:
         src = iframe.get("src", "")
-        ##---===>print("src:", src)
         width = iframe.get("width", "")
-        ##---===>print("width:", width)
         height = iframe.get("height", "")
-        ##---===>print("height:", height)
         style = iframe.get("style", "").lower()
 
         if legit_iframes(src):
@@ -380,13 +468,11 @@ def iframe_redirection(url): # document 1.3.5
         # cross-domain iframe
         if is_cross_domain(url, src):
             flags["Cross_Domain_Iframe"] = True
-            ##---===>print("url ", url)
-            ##---===>print("src ", src)
+
 
         # nested iframes
         if iframe.find("iframe"):
             flags["Nested_Iframes"] = True
-            ##---===>print("iframe ", iframe)
 
         # no visible purpose / the iframe shows no content to user
         if not iframe.text.strip() and not src:
@@ -403,35 +489,22 @@ def iframe_redirection(url): # document 1.3.5
     return flags
 
 print("|||||||||||||||||||||||||||||||||||||||")
-"""
-def domain_expiry(url): #document 1.1.9
-    #if domain expires in <= 1 year is Phish
-    #expire_date = 0
-    try:
-        domain = whois.whois(tldextract.extract(url).registered_domain)
-        print("domain: ", domain)
-        expiry_date = domain.expiration_date
-        print("TRY: expiry_date: ", expiry_date)
-        if isinstance(expiry_date, list): # if the expiry_date exist as list pick the first item
-            expiry_date = expiry_date[0]
-        today = datetime.now()
-        print("today : ",today)
-        days_left = (expiry_date - today).days
-        print("days left: ", days_left)
-        if days_left >= 365:
-            expiry_date = 0 #legit
-        else:
-            expiry_date = 1 #phish
-    except:
-        expiry_date = 2 # needs to be reviewed and discussed
-    
-    print("expiry date: ", expiry_date)
-    return expiry_date
 
-#domain_expiry(url_legit4)
-"""
-##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def resolve_A_cname(url): #document 1.4.2
+    """
+    Recursively resolves a domain to its IPv4 (A) addresses, following CNAME chains.
+
+    This function attempts to find the final IP address of a host. If an 'A' record 
+    is not immediately found, it looks for a 'CNAME' (alias), updates the target, 
+    and repeats the process until an IP is resolved or the chain ends.
+
+    Args:
+        url (str): The domain name or URL to resolve.
+
+    Returns:
+        list[str]: A list of resolved IPv4 addresses. Returns an empty list if 
+                   no records are found or the domain does not exist.
+    """
     resolved_ips = []
     visited = set()
     resolver = dns.resolver.Resolver()
@@ -480,6 +553,29 @@ def parent_domain(url): #document 1.4.2
 
 
 def dns_records(url): #document 1.4.2
+    """
+    Assesses DNS health, and age of registration of a domain to detect phishing.
+
+    Phishing domains might have no valid mail records (MX), and have temporary names. 
+    servers, or were very recently registered. This function checks for the 
+    presence of A, AAA, MX and NS records and queries WHOIS with. 
+    domain age.
+
+    Args:
+        url (str): The URL to analyse.
+
+    Returns:
+        dict: Dictionary of indicative flags where True means a risk factor:
+            - ARecord (bool): True when there are no IPv4 addresses.
+            - AAAA_Record (bool): True when there are no IPv6 addresses.
+            - MX_Record (bool): True when there are no records of Mail Exchange (uncharacteristic of legitimate sites).
+            - NS_Record (bool): True when no records in Name Server.
+            - Age_Days (bool): True if the domain is < 7 days old or age is unavailable.
+
+    Note:
+        Needs libraries such as dnspython, tldextract and python-whois. 
+        Absence of DNS records is a good sign of malicious or ephemeral domain.
+    """
     #print("domain: ",domain)
     results = {}
     flags = {
@@ -601,6 +697,33 @@ url_shorteners = [
 ]
 
 def url_path(url):
+    """
+    Examines the lexical composition of a URL to find patterns that could be related to phishing.
+
+    This role breaks down the URL into its parts and verifies the existence of. 
+    standard obfuscation methods, such as using URL shorteners, 
+    free hosting domains, questionable keywords in the path, and high. 
+    lexical complexity (unnecessary digits or complexity).
+
+    Args:
+        url (str): the complete URL that should be analyzed.
+
+    Returns:
+        dict: dictionary of Boolean flags, with True meaning a risk factor:
+            - URL_Short (bool): True when an established URL shortener (e.g. bit.ly) was used.
+            - Free_Domain (bool): True when the site is on a free domain host.
+            - Phish_Keyword (bool): True when there are typical phishing words (e.g., 'login', 'verify'). 
+              appear in the path.
+            - File_Extension (bool): True when it contains suspicious file extensions (e.g.,.exe, .zip). 
+              are located in the realm or direction.
+            - Segment (bool): The path segment is long (more than 18 chars) and has numbers.
+            - Digits (bool): True when the path has over 5 numeric digits.
+            - Query (bool): True when there are suspicious parameters in the query string.
+            - Depth_Segments (bool): True when the URL path has more than 3 levels.
+
+        The operation depends on a number of external lists to make a comparison: `url shorteners. 
+        free_domains, keywords, extentions and queries.
+    """
     ##---===>print(url, "\n")
     parsed = urlparse(url)
     ##---===>print("Parsed: \n", parsed, "\n")
@@ -687,38 +810,62 @@ def url_path(url):
 
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def domain_age(url):    # document 1.4.1
+    """
+    Validates the age of the domain with WHOIS registration information.
+
+    This operation identifies the registered domain and makes queries of WHOIS records. 
+    find the days since it was created. Most phishing campaigns 
+    use domains that have been registered in the recent days in order to be ahead of blacklists.
+
+    Args:
+        url (str): The entire URL being tested.
+
+    Returns:
+        bool: 
+            - False (0): Legitimate (Domain age is > 7 days).
+            - True (1): Phishing (Domain age is <= 7 days, or no record is found).
+
+    Side Effects:
+        Updates the global `flags` dictionary with the "Domain_Age" key.
+    """
     try:
         domain = whois.whois(tldextract.extract(url).registered_domain)
-        ##---===>print("domain: ", domain)
         creation_date = domain.creation_date
-        ##---===>print("creation_date: ", creation_date)
         if isinstance(creation_date, list): # if the expiry_date exist as list pick the first item
             creation_date = creation_date[0]
         today = datetime.now()
         ##---===>print("today : ",today)
         age_days = (today - creation_date).days
-        ##---===>print("days left: ", age_days)
         if age_days > 7:
             domain_age = 0 #legit
-            ##---===>print("Legit")
             flags["Domain_Age"] = False
             return flags["Domain_Age"]
         else:
             domain_age = 1 #phish
-            ##---===>print("Phish")
             flags["Domain_Age"] = True
             return flags["Domain_Age"]
     except:
         domain_age = 2 # needs to be reviewed and discussed
-        ##---===>print("Suspecious")
         flags["Domain_Age"] = True #more likely there is no record or timeout
         return flags["Domain_Age"]
-
-#domain_age(url_phish3)
 
     
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 def right_click(url): #document 1.3.3
+    """
+    Checks whether the right-click context menu has been disabled (JavaScript).
+
+    This function searches the HTML source for 'contextmenu' event listeners 
+    or particular 'event.button' checks to block the right-click menu.
+
+    Args:
+        url (str): The URL of the webpage to scrape and analyze.
+
+    Returns:
+        bool: 
+            - True (1): Phishing (Right-click is disabled or HTML is unreachable).
+            - False (0): Legitimate (No context menu manipulation detected).
+    """
     _, html_content = get_soup(url)
     if not html_content: 
         ##---===>print("no HTML content")
@@ -742,6 +889,22 @@ def right_click(url): #document 1.3.3
 
 print("|||||||||||||||||||||||||||||||||||||||")
 def custom_status_bar(url):    #Document 1.3.2
+    """
+    Identifies if JavaScript is used to hide or spoof the browser's status bar.
+
+    This is a function that seeks the occurrence of both onmouseover events and. 
+    'window.status' assignments. This trick is employed in order to deceive users. 
+    so that they believe they are clicking on a valid link by displaying a. 
+    spoofed URL in the browser status bar.
+
+    Args:
+        url (str): URL of the webpage to be analysed.
+
+    Returns:
+        bool: 
+            - True (1): Phishing (Status bar manipulation detected or no HTML).
+            - False (0): Legitimate (No status bar tampering detected).
+    """
     _,html_content = get_soup(url)
     #print(get_soup(url))
     if not html_content:
@@ -766,6 +929,26 @@ def custom_status_bar(url):    #Document 1.3.2
 ##---===>print("|||||||||||||||||||||||||||||||||||||||")
 # the main extraction function 
 def feature_extraction(url, label):
+    """
+    Plays the role of the central orchestrator to elicit all the multi-dimensional phishing features.
+
+    This role is a compilation of five key types of analysis outputs:
+    1. Address Bar: IP presence, at symbol, length of URL and subdomains.
+    2. SSL/TLS Certificate Features: Trust, age, validity, and issuer details.
+    3. HTML/JavaScript Features: Hidden iframes, clickjacking overlays, and disabled UI.
+    4. Network/DNS Features: Record existence (A, AAAAA, MX, NS) and domain age.
+    5. Lexical/Path Features: URL redirection, free hosting, and suspicious keywords.
+
+    Args:
+        url (str): The target URL which is going to be analyzed.
+        label (int/str): The label of the classification (1 is Phish, 0 is Legit) 
+            to be added to the feature set.
+
+    Returns:
+        dict: A dictionary that is a flattened version of all extracted dictionary entries, both boolean and numeric. 
+              target label, among others. This dictionary is suitable 
+              to convert into a pandas DataFrame to be processed by ML.
+    """
     #print("--------------")
     print(url, "\n")
     features={}
@@ -839,6 +1022,33 @@ Phish_TEST_path = "Content/CSVs/Test_CSVs/phish_urls_FOR_TEST.csv"
 Legit_TEST_path = "Content/CSVs/Test_CSVs/LEGIT_urls__FOR_TEST.csv"
 
 def process_urls_csv(csv_path, label, url_column_name="url"):
+    """
+    Extracts features in batches on the list of URLs sorted in a CSV file.
+
+    This operation automates the extraction process of an entire end-to-end. 
+    dataset. It reads the source file, removes entries that are missing, and runs the. 
+    coordinated multi-dimensional feature_extraction pipeline per URL. The results 
+    are combined into one pandas DataFrame, which is best suited to. 
+    creating training or testing data.
+
+    Args:
+        csv_path (str): The local or remote file path to the CSV file.
+        label (int/str): The label that will be given to each of the URLs in this. 
+            batch (e.g., 0 as the case of Legitimate, 1 as the case of Phishing).
+        url_column_name (str, optional): The name of the column that is holding the. 
+            target URLs. In case the column is not found, it assumes the first. 
+            column is the URL column. Defaults to "url".
+
+    Returns:
+        pd.DataFrame: A DataFrame in which the rows are processed URLs. 
+            and its respective features (lexical, DNS, SSL and behavioral).
+
+    Note:
+        - The function uses `tqdm` to display a progress bar in the console.
+        - URLs that do not process (e.g. because of network timeouts or 
+          parsing errors) are reported and ignored.
+        - Missing (NaN) values in the URL column are dropped before processing.
+    """
     df = pd.read_csv(csv_path)
 
     if url_column_name not in df.columns:

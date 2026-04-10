@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 
 from xgboost import XGBClassifier
 
+
 # Load the combined feature csv 
 df = pd.read_csv("Content/CSVs/Phish_legit_features_combined.csv")
 

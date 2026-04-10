@@ -59,12 +59,26 @@ url_legit10 = "https://www.redlineinventory.com"
 
 
 def getting_text(url):
+    """
+    Fetching a URL, scraping the HTML, and providing cleaned and normalized text.
+
+    This feature tries to avoid simple bot detection with custom headers.
+    It strips all the text out of the HTML and removes any extraneous whitespace (newlines,). 
+    tabs, multiple spaces), and gracefully handles connection errors.
+
+    Args:
+        url (str): The complete web address (URL) of the site that is going to be scraped.
+
+    Returns:
+        str: Text content of the page that was cleaned and normalized (when successful).
+        int: -1 if exception (e.g., timeout,SSL error, 404) occurs.
+
+    Note:
+        To address this, verifications of the SSL are explicitly turned off (verify=False). 
+        dubious or poorly set up phishing websites, but this comes at a cost. 
+        threats in a manufacturing facility.
+    """
     try:
-        #headers = {"User-Agent": "Mozilla/5.0"}
-        #headers = {
-                #"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                #"(KHTML, like Gecko) Chrome/120.0 Safari/537.36"
-        #}
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -74,8 +88,7 @@ def getting_text(url):
         }
         # #(1) Error Fetching URL:HTTPSConnectionPool(host='login.5n6tk57.cn', port=443): Max retries exceeded with url: /6yMK23 (Caused by SSLError(SSLError(1, '[SSL] unknown error (_ssl.c:1033)')))
         response = requests.get(url, headers=headers, timeout=10, verify = False)
-        #session = requests.Session()
-        #response = session.get(url, headers=headers, timeout=10)
+
 
         html_content = response.text
         soup = BeautifulSoup(html_content, "html.parser")
@@ -85,17 +98,36 @@ def getting_text(url):
         #print("---------------------------","\n")
         clean_text = re.sub(r"\s+"," ",text).strip()
         return clean_text #, url_len #url
-    #except:
-        #return -1
     except Exception as e:
         print(f"Error Fetching URL:{e}")
         return -1
 #print(getting_text(url_legit1))
 
 def process_text(text, lang_code='english'):
-    """Updated to use the detected language for stopwords."""
+    """
+    Processes raw text into a list of cleaned, lemmatized tokens.
+
+    This function performs a standard NLP pipeline:
+    1. Tokenization and Case Folding: Converts text to lowercase and splits into tokens.
+    2. Cleaning: Filters out non-alphabetic tokens (punctuation and numbers).
+    3. Stopword Removal: Removes common words based on the provided language code,
+       mapping ISO language codes to NLTK-compatible names with an English fallback.
+    4. Lemmatization: Reduces words to their base or dictionary form (e.g., 'running' -> 'run').
+
+    Args:
+        text (str): The raw string content to be processed.
+        lang_code (str, optional): The language code (e.g., 'en', 'fr') used to 
+            select the appropriate stopword list. Defaults to 'english'.
+
+    Returns:
+        list[str]: A list of cleaned, lowercase, and lemmatized word tokens.
+
+    Raises:
+        LookupError: If NLTK resources (stopwords, punkt, wordnet) are not 
+            downloaded to the local system.
+    """
     tokens = word_tokenize(text.lower())
-    #words = [word for word in tokens if word.isalpha()]
+    
     words = []
     for word in tokens:
         if word.isalpha():
@@ -133,7 +165,22 @@ def process_text(text, lang_code='english'):
 lang_model = fasttext.load_model('lid.176.bin')
 
 def detect_language(text):
-    """Identifies the language and returns the ISO code and confidence score."""
+    """
+    Detects the language of a given text using a fastText pre-trained model.
+
+    The function cleans the input by removing newlines to satisfy fastText's 
+    input requirements, predicts the language, and extracts the ISO 639 
+    language code.
+
+    Args:
+        text (str): The cleaned text extracted from a webpage.
+
+    Returns:
+        tuple: (lang_code, confidence)
+            - lang_code (str): The ISO language code (e.g., 'en', 'fr'). 
+              Returns 'unknown' if text is empty.
+            - confidence (float): The model's confidence score (0.0 to 1.0).
+    """
     if not text.strip():
         return "unknown", 0.0
     
@@ -142,7 +189,6 @@ def detect_language(text):
     # fastText expects a single line of text
     single_line_text = text.replace('\n', ' ')
     #print(single_line_text)
-    # Predict returns: (('__label__en',), array([0.98]))
     predictions = lang_model.predict(single_line_text, k=1)
     
     lang_code = predictions[0][0].replace('__label__', '')
@@ -152,6 +198,32 @@ def detect_language(text):
     return lang_code, confidence
 
 def NLTK_feature(url, Label):#Words
+    """
+    Arranges the NLP pipeline to compute a phishing weight of a URL.
+
+    The process of the role entails the following:
+    1. Scrapes text from the URL.
+    2. finds the language to facilitate the removal of stopwords.
+    3. Slurred and indexed the text to lemmatized words.
+    4. Compare words to a weighted dictionary of phishing words.
+    5. Computes a total weight, which is determined by the frequency of the terms at high risk.
+
+    Args:
+        url (str): Web address to analyze.
+        Label (int/str): The ground-truth label (e.g., 1 in case of Phish, 0 in case of Legit).
+
+    Returns:
+        dict: A collection of extracted features including:
+            - original URL (str): original URL.
+            - length of the URL (int): The length of the URL.
+            - Detected_lan (str): The detected ISO language code.
+            - total weight (int): cumulative risk score, which is the frequency of a keyword.
+            - Label (int/str): The original class label that is passed to the function.
+
+    Note:
+        If the URL cannot be fetched (returns -1), the function returns a 
+        default dictionary with zero weight and 'unknown' language.
+    """
     url_len = len(url)
     clean_text = getting_text(url)
     if clean_text == -1:
@@ -264,28 +336,37 @@ def NLTK_feature(url, Label):#Words
 # https://bit.ly/3Vol9pv,UK, 5
 
 
-'''
-clean_text = getting_text(url_legit5)
-
-# detect Language First
-language, lang_conf = detect_language(clean_text)
-
-# pass the detected language into your processing function
-processed_text = process_text(clean_text, lang_code=language)
-
-# run feature extraction
-NLTK_extraction, weight = NLTK_feature(processed_text, label = 1)
-print("---------------------\n")
-#print(url," | ",url_len," | ", language," | ", lang_conf," | ", weight)
-'''
-
-
 Phish_url_10000 = "Content/CSVs/phish_urls_extracted_10000.csv"
 Legit_url_10000 = "Content/CSVs/Legit_urls_extracted_10000.csv"
 
 phish_urls_for_test = "Content/CSVs/Test_CSVs/phish_urls_FOR_TEST.csv"
 Legit_urls_for_test = "Content/CSVs/Test_CSVs/LEGIT_urls__FOR_TEST.csv"
 def process_urls_NLTK(csv_path, label, url_column_name="url"):
+    """
+    Takes a CSV file of URLs to extract features of NLTK.
+
+    This operation reads a dataset, loops over the URLs, and runs the operation. 
+    Feature extraction pipeline NLTK. It particularly sifts English. 
+    to make sure the NLTK stopword and lemmatization logic is not killed off. 
+    accurate.
+
+    Args:
+        csv_path (str): The path of the CSV file with the URLs.
+        label (int/str): The label to be used as the target class of all URLs in this. 
+            batch (1 phishing, 0 legitimate).
+        url_column_name (str, optional): The name of the column where contains. 
+            the URLs. In case it is not, the function tries to rename the 
+            first column to "url. Defaults to "url".
+
+    Returns:
+        pd.DataFrame: A DataFrame with each row holding the extracted NLTK. 
+            data and the label that features to processed English URLs.
+
+    Note:
+        - URLs that are not in English are recorded and skipped to ensure consistency in features.
+        - Invokes tqdm to have a visual representation of processing.
+        - Rows with missing (NaN) URLs are automatically dropped before processing.
+    """
     df = pd.read_csv(csv_path)
 
     if url_column_name not in df.columns:
