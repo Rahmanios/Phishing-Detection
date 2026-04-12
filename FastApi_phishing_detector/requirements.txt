@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+jinja2
+python-multipart
+requests
+beautifulsoup4
+scikit-learn
+xgboost
+nltk
+joblib
+tldextract
+python-whois
+dnspython
+pandas
+sqlalchemy
+aiosqlite

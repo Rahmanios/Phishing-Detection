@@ -1,0 +1,1044 @@
+{%- macro owasp_report_section(result) -%}
+{% if result.owasp_report %}
+{% set owasp = result.owasp_report %}
+{% set rating = owasp.risk_rating %}
+{% set score = owasp.risk_score %}
+{% set likelihood = owasp.likelihood %}
+{% set impact = owasp.impact %}
+{% set findings = impact.findings %}
+{% set categories = owasp.owasp_categories %}
+{% set actions = owasp.recommended_actions %}
+{% set compliance = owasp.compliance_mapping %}
+{% set total_ind = impact.total_indicators %}
+
+<div class="section owasp-section">
+    <div class="section-header owasp-header">
+        <span style="margin-right: 8px;">🛡️</span> OWASP Risk Assessment
+        <span style="font-size: 12px; font-weight: normal; opacity: 0.8; margin-left: 8px;">Risk Rating Methodology</span>
+    </div>
+    <div class="section-body owasp-body">
+
+        <!-- Risk Rating Banner -->
+        <div class="owasp-risk-banner owasp-risk-{{ rating | lower }}">
+            <div class="owasp-risk-left">
+                <div class="owasp-risk-label">Risk Rating</div>
+                <div class="owasp-risk-value">{{ rating }}</div>
+            </div>
+            <div class="owasp-risk-center">
+                <div class="owasp-score-ring owasp-ring-{{ rating | lower }}">
+                    <span class="owasp-score-num">{{ score }}</span>
+                    <span class="owasp-score-max">/100</span>
+                </div>
+                <div class="owasp-score-formula">
+                    Likelihood ({{ likelihood.score }}) × Impact ({{ impact.score }}) = {{ score }}
+                </div>
+            </div>
+            <div class="owasp-risk-right">
+                <div class="owasp-indicator-count">{{ total_ind }} indicator{{ 's' if total_ind != 1 else '' }} detected</div>
+                <div class="owasp-indicator-breakdown">
+                    {% if findings.critical | length > 0 %}<span class="owasp-sev-dot sev-critical"></span> {{ findings.critical | length }} Critical{% endif %}
+                    {% if findings.high | length > 0 %}<span class="owasp-sev-dot sev-high"></span> {{ findings.high | length }} High{% endif %}
+                    {% if findings.medium | length > 0 %}<span class="owasp-sev-dot sev-medium"></span> {{ findings.medium | length }} Medium{% endif %}
+                    {% if findings.low | length > 0 %}<span class="owasp-sev-dot sev-low"></span> {{ findings.low | length }} Low{% endif %}
+                    {% if total_ind == 0 %}No indicators detected{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Likelihood & Impact Bars -->
+        <div class="owasp-bars">
+            <div class="owasp-bar-group">
+                <div class="owasp-bar-label">
+                    <span>Likelihood</span>
+                    <span class="owasp-bar-level owasp-level-{{ likelihood.level | lower }}">{{ likelihood.level }} ({{ likelihood.score }}/10)</span>
+                </div>
+                <div class="owasp-bar-track">
+                    <div class="owasp-bar-fill owasp-fill-{{ rating | lower }}" style="width: {{ likelihood.score * 10 }}%"></div>
+                </div>
+                <div class="owasp-bar-basis">{{ likelihood.basis }}</div>
+            </div>
+            <div class="owasp-bar-group">
+                <div class="owasp-bar-label">
+                    <span>Impact</span>
+                    <span class="owasp-bar-level owasp-level-{{ impact.level | lower }}">{{ impact.level }} ({{ impact.score }}/10)</span>
+                </div>
+                <div class="owasp-bar-track">
+                    <div class="owasp-bar-fill owasp-fill-impact owasp-fill-impact-{{ impact.level | lower }}" style="width: {{ impact.score * 10 }}%"></div>
+                </div>
+                <div class="owasp-bar-basis">
+                    {% if total_ind > 0 %}
+                    Based on {{ total_ind }} detected indicator{{ 's' if total_ind != 1 else '' }}
+                    {% else %}
+                    No impact indicators detected
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Impact Findings by Severity -->
+        <div class="owasp-findings">
+            <div class="owasp-findings-title">Impact Findings</div>
+
+            {% if findings.critical | length > 0 %}
+            <div class="owasp-severity-group">
+                <div class="owasp-severity-header sev-critical">
+                    <span class="owasp-sev-badge sev-bg-critical">CRITICAL</span>
+                    <span>{{ findings.critical | length }} indicator{{ 's' if findings.critical | length != 1 else '' }}</span>
+                </div>
+                <div class="owasp-severity-list">
+                    {% for f in findings.critical %}
+                    <div class="owasp-finding-item">
+                        <span class="owasp-finding-feature">{{ f.feature }}</span>
+                        <span class="owasp-finding-desc">{{ f.description }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if findings.high | length > 0 %}
+            <div class="owasp-severity-group">
+                <div class="owasp-severity-header sev-high">
+                    <span class="owasp-sev-badge sev-bg-high">HIGH</span>
+                    <span>{{ findings.high | length }} indicator{{ 's' if findings.high | length != 1 else '' }}</span>
+                </div>
+                <div class="owasp-severity-list">
+                    {% for f in findings.high %}
+                    <div class="owasp-finding-item">
+                        <span class="owasp-finding-feature">{{ f.feature }}</span>
+                        <span class="owasp-finding-desc">{{ f.description }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if findings.medium | length > 0 %}
+            <div class="owasp-severity-group">
+                <div class="owasp-severity-header sev-medium">
+                    <span class="owasp-sev-badge sev-bg-medium">MEDIUM</span>
+                    <span>{{ findings.medium | length }} indicator{{ 's' if findings.medium | length != 1 else '' }}</span>
+                </div>
+                <div class="owasp-severity-list">
+                    {% for f in findings.medium %}
+                    <div class="owasp-finding-item">
+                        <span class="owasp-finding-feature">{{ f.feature }}</span>
+                        <span class="owasp-finding-desc">{{ f.description }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if findings.low | length > 0 %}
+            <div class="owasp-severity-group">
+                <div class="owasp-severity-header sev-low">
+                    <span class="owasp-sev-badge sev-bg-low">LOW</span>
+                    <span>{{ findings.low | length }} indicator{{ 's' if findings.low | length != 1 else '' }}</span>
+                </div>
+                <div class="owasp-severity-list">
+                    {% for f in findings.low %}
+                    <div class="owasp-finding-item">
+                        <span class="owasp-finding-feature">{{ f.feature }}</span>
+                        <span class="owasp-finding-desc">{{ f.description }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if total_ind == 0 %}
+            <div class="owasp-no-findings">No malicious indicators detected — all checks passed</div>
+            {% endif %}
+        </div>
+
+        <!-- OWASP Top 10 Category Mapping -->
+        {% if categories | length > 0 %}
+        <div class="owasp-categories">
+            <div class="owasp-findings-title">OWASP Top 10 (2021) Category Mapping</div>
+            <table class="owasp-cat-table">
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">Category</th>
+                        <th>Name</th>
+                        <th style="width: 100px;">Relevance</th>
+                        <th>Matched Indicators</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr>
+                        <td><code class="owasp-cat-id">{{ cat.id }}</code></td>
+                        <td>
+                            <div style="font-weight: 600;">{{ cat.name }}</div>
+                            <div style="font-size: 12px; color: #888; margin-top: 2px;">{{ cat.description }}</div>
+                        </td>
+                        <td>
+                            <span class="owasp-cat-relevance owasp-cat-rel-{{ cat.relevance | lower }}">{{ cat.relevance }}</span>
+                        </td>
+                        <td>
+                            {% for ind in cat.matched_indicators %}
+                            <span class="tag tag-owasp">{{ ind }}</span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Recommended Actions -->
+        <div class="owasp-actions">
+            <div class="owasp-findings-title">Recommended Actions</div>
+            <div class="owasp-action-list">
+                {% for act in actions %}
+                <div class="owasp-action-item">
+                    <span class="owasp-action-num">{{ loop.index }}</span>
+                    <span class="owasp-action-priority owasp-priority-{{ act.priority | lower }}">{{ act.priority }}</span>
+                    <div class="owasp-action-content">
+                        <div class="owasp-action-text">{{ act.action }}</div>
+                        <div class="owasp-action-detail">{{ act.detail }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Compliance Mapping -->
+        {% if compliance | length > 0 %}
+        <div class="owasp-compliance">
+            <div class="owasp-findings-title">Compliance Framework Mapping</div>
+            <table class="owasp-compliance-table">
+                <thead>
+                    <tr>
+                        <th style="width: 180px;">Framework</th>
+                        <th>Relevant Controls</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comp in compliance %}
+                    <tr>
+                        <td><strong>{{ comp.framework }}</strong></td>
+                        <td style="font-size: 13px; color: #555;">{{ comp.controls }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endif %}
+{%- endmacro -%}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Phishing Detection Scanner</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 20px;
+            background: #f5f5f5; color: #333;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; color: #1a1a2e; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 20px; }
+        .tab-nav {
+            display: flex; justify-content: center; gap: 0;
+            margin-bottom: 20px; border-bottom: 2px solid #ddd;
+        }
+        .tab-btn {
+            padding: 12px 30px; font-size: 16px; font-weight: 600;
+            background: transparent; border: none; cursor: pointer;
+            color: #666; border-bottom: 3px solid transparent;
+            margin-bottom: -2px; transition: all 0.2s; text-decoration: none;
+        }
+        .tab-btn:hover { color: #1a1a2e; }
+        .tab-btn.active { color: #1a1a2e; border-bottom-color: #1a1a2e; }
+        .tab-btn .badge {
+            display: inline-block; background: #e53935; color: white;
+            font-size: 11px; padding: 1px 6px; border-radius: 10px;
+            margin-left: 6px; font-weight: bold;
+        }
+        .form-box {
+            background: white; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;
+        }
+        .input-row { display: flex; gap: 10px; }
+        .input-row input[type="text"] {
+            flex: 1; padding: 12px 16px; font-size: 16px;
+            border: 2px solid #ddd; border-radius: 6px; outline: none;
+        }
+        .input-row input[type="text"]:focus { border-color: #4a90d9; }
+        .input-row button {
+            padding: 12px 32px; font-size: 16px; font-weight: bold;
+            background: #1a1a2e; color: white; border: none;
+            border-radius: 6px; cursor: pointer; white-space: nowrap;
+        }
+        .input-row button:hover { background: #16213e; }
+        .error {
+            background: #fee; border: 1px solid #fcc; color: #c00;
+            padding: 12px; border-radius: 6px; margin-bottom: 20px;
+        }
+        .verdict-banner {
+            padding: 20px; border-radius: 8px; margin-bottom: 25px;
+            text-align: center; font-size: 24px; font-weight: bold;
+        }
+        .verdict-phishing { background: #fdecea; border: 2px solid #e53935; color: #b71c1c; }
+        .verdict-legitimate { background: #e8f5e9; border: 2px solid #43a047; color: #1b5e20; }
+        .verdict-details { text-align: center; color: #666; margin-top: 8px; font-size: 14px; }
+        .back-to-history {
+            display: inline-block; margin-bottom: 15px; color: #4a90d9;
+            text-decoration: none; font-size: 14px; padding: 8px 0;
+        }
+        .back-to-history:hover { text-decoration: underline; }
+        .section {
+            background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px; overflow: hidden;
+        }
+        .section-header {
+            background: #1a1a2e; color: white; padding: 12px 20px;
+            font-size: 16px; font-weight: bold;
+        }
+        .section-body { padding: 16px 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #f8f8f8; color: #555; font-weight: 600; width: 30%; }
+        td:last-child { word-break: break-word; }
+        .flag-true { color: #c62828; font-weight: bold; }
+        .flag-false { color: #2e7d32; }
+        .model-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .model-card {
+            border: 1px solid #ddd; border-radius: 8px; padding: 16px; text-align: center;
+        }
+        .model-card h3 { margin: 0 0 8px; font-size: 14px; color: #555; }
+        .model-card .prediction { font-size: 20px; font-weight: bold; }
+        .model-card .probability { color: #888; font-size: 13px; }
+        .model-card.phishing { border-color: #e53935; background: #fff5f5; }
+        .model-card.phishing .prediction { color: #c62828; }
+        .model-card.legitimate { border-color: #43a047; background: #f1f8f2; }
+        .model-card.legitimate .prediction { color: #2e7d32; }
+        .tag {
+            display: inline-block; padding: 2px 8px; margin: 2px;
+            background: #e3f2fd; color: #1565c0; border-radius: 4px;
+            font-size: 12px; font-family: monospace;
+        }
+        .tag-warning { background: #fff3e0; color: #e65100; }
+        .scan-meta { text-align: center; color: #999; font-size: 12px; margin-bottom: 20px; }
+        .history-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; flex-wrap: wrap; gap: 10px;
+        }
+        .search-box { display: flex; gap: 8px; flex: 1; max-width: 400px; }
+        .search-box input {
+            flex: 1; padding: 10px 14px; font-size: 14px;
+            border: 2px solid #ddd; border-radius: 6px; outline: none;
+        }
+        .search-box input:focus { border-color: #4a90d9; }
+        .search-box button {
+            padding: 10px 20px; background: #4a90d9; color: white;
+            border: none; border-radius: 6px; cursor: pointer;
+        }
+        .search-box button:hover { background: #3a7bc8; }
+        .clear-btn {
+            padding: 10px 20px; background: #e53935; color: white;
+            border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+        }
+        .clear-btn:hover { background: #c62828; }
+        .history-table {
+            background: white; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .history-table table { margin: 0; }
+        .history-table th {
+            background: #1a1a2e; color: white; font-weight: 600; padding: 12px 16px; width: auto;
+        }
+        .history-table tr:hover { background: #f8f9fa; }
+        .history-table td { vertical-align: middle; }
+        .url-cell { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .url-cell a { color: #4a90d9; text-decoration: none; }
+        .url-cell a:hover { text-decoration: underline; }
+        .verdict-badge {
+            display: inline-block; padding: 4px 12px; border-radius: 4px;
+            font-weight: bold; font-size: 13px;
+        }
+        .verdict-badge.phishing { background: #fdecea; color: #c62828; border: 1px solid #e53935; }
+        .verdict-badge.legitimate { background: #e8f5e9; color: #2e7d32; border: 1px solid #43a047; }
+        .owasp-history-badge {
+            display: inline-block; padding: 3px 8px; border-radius: 4px;
+            font-weight: bold; font-size: 11px; margin-left: 6px;
+        }
+        .owasp-history-badge.critical { background: #b71c1c; color: white; }
+        .owasp-history-badge.high { background: #e65100; color: white; }
+        .owasp-history-badge.medium { background: #f9a825; color: #333; }
+        .owasp-history-badge.low { background: #1565c0; color: white; }
+        .owasp-history-badge.informational { background: #757575; color: white; }
+        .action-btns { display: flex; gap: 6px; }
+        .action-btn {
+            padding: 6px 12px; font-size: 12px; border: none;
+            border-radius: 4px; cursor: pointer; text-decoration: none;
+        }
+        .action-btn.view { background: #e3f2fd; color: #1565c0; }
+        .action-btn.view:hover { background: #bbdefb; }
+        .action-btn.delete { background: #fdecea; color: #c62828; }
+        .action-btn.delete:hover { background: #f8d7da; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #888; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
+        .empty-state p { font-size: 16px; margin: 5px 0; }
+        .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 20px; align-items: center; }
+        .pagination a, .pagination span {
+            display: inline-block; padding: 8px 14px; border: 1px solid #ddd;
+            border-radius: 4px; text-decoration: none; color: #333; font-size: 14px;
+        }
+        .pagination a:hover { background: #e3f2fd; border-color: #4a90d9; }
+        .pagination .active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+        .pagination .disabled { color: #ccc; pointer-events: none; }
+        .pagination-info { margin: 15px 0 0; text-align: center; color: #888; font-size: 13px; }
+        .confirm-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+        .confirm-overlay.active { display: flex; }
+        .confirm-dialog {
+            background: white; padding: 30px; border-radius: 10px;
+            text-align: center; max-width: 400px; width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .confirm-dialog h3 { margin: 0 0 10px; color: #1a1a2e; }
+        .confirm-dialog p { color: #666; margin-bottom: 20px; }
+        .confirm-dialog .btn-group { display: flex; gap: 10px; justify-content: center; }
+        .confirm-dialog .btn-cancel {
+            padding: 10px 24px; background: #eee; border: none;
+            border-radius: 6px; cursor: pointer; font-size: 14px;
+        }
+        .confirm-dialog .btn-confirm-delete {
+            padding: 10px 24px; background: #e53935; color: white;
+            border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+            text-decoration: none;
+        }
+        .owasp-section { border: 2px solid #2d1b4e; }
+        .owasp-header { background: linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%) !important; }
+        .owasp-body { padding: 20px; }
+        .owasp-risk-banner {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-radius: 8px; margin-bottom: 20px;
+            flex-wrap: wrap; gap: 15px;
+        }
+        .owasp-risk-critical { background: linear-gradient(135deg, #b71c1c 0%, #d32f2f 100%); color: white; }
+        .owasp-risk-high { background: linear-gradient(135deg, #e65100 0%, #f57c00 100%); color: white; }
+        .owasp-risk-medium { background: linear-gradient(135deg, #f57f17 0%, #fbc02d 100%); color: #333; }
+        .owasp-risk-low { background: linear-gradient(135deg, #1565c0 0%, #1e88e5 100%); color: white; }
+        .owasp-risk-informational { background: linear-gradient(135deg, #424242 0%, #616161 100%); color: white; }
+        .owasp-risk-left { flex: 0 0 auto; }
+        .owasp-risk-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.85; }
+        .owasp-risk-value { font-size: 32px; font-weight: 900; line-height: 1.1; }
+        .owasp-risk-center { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+        .owasp-score-ring {
+            width: 64px; height: 64px; border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 3px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.15);
+        }
+        .owasp-score-num { font-size: 22px; font-weight: 900; line-height: 1; }
+        .owasp-score-max { font-size: 10px; opacity: 0.75; }
+        .owasp-score-formula { font-size: 12px; opacity: 0.8; }
+        .owasp-risk-right { flex: 1; min-width: 150px; text-align: right; }
+        .owasp-indicator-count { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .owasp-indicator-breakdown { font-size: 12px; opacity: 0.85; display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+        .owasp-sev-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+        .sev-critical { background: #ff1744; }
+        .sev-high { background: #ff9100; }
+        .sev-medium { background: #ffd600; }
+        .sev-low { background: #448aff; }
+        .owasp-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .owasp-bar-group { background: #f8f9fa; border-radius: 8px; padding: 14px 16px; }
+        .owasp-bar-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+        .owasp-bar-level { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        .owasp-level-almost-certain { background: #fdecea; color: #b71c1c; }
+        .owasp-level-likely { background: #fff3e0; color: #e65100; }
+        .owasp-level-possible { background: #fffde7; color: #f57f17; }
+        .owasp-level-unlikely { background: #e3f2fd; color: #1565c0; }
+        .owasp-level-rare { background: #f5f5f5; color: #616161; }
+        .owasp-level-severe { background: #fdecea; color: #b71c1c; }
+        .owasp-level-significant { background: #fff3e0; color: #e65100; }
+        .owasp-level-moderate { background: #fffde7; color: #f57f17; }
+        .owasp-level-minor { background: #e3f2fd; color: #1565c0; }
+        .owasp-bar-track { height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+        .owasp-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .owasp-fill-critical { background: linear-gradient(90deg, #c62828, #e53935); }
+        .owasp-fill-high { background: linear-gradient(90deg, #e65100, #ff9800); }
+        .owasp-fill-medium { background: linear-gradient(90deg, #f57f17, #fbc02d); }
+        .owasp-fill-low { background: linear-gradient(90deg, #1565c0, #42a5f5); }
+        .owasp-fill-informational { background: linear-gradient(90deg, #616161, #9e9e9e); }
+        .owasp-fill-impact { background: linear-gradient(90deg, #4a148c, #7b1fa2) !important; }
+        .owasp-fill-impact-severe { background: linear-gradient(90deg, #b71c1c, #e53935) !important; }
+        .owasp-fill-impact-significant { background: linear-gradient(90deg, #e65100, #ff9800) !important; }
+        .owasp-fill-impact-moderate { background: linear-gradient(90deg, #f57f17, #fbc02d) !important; }
+        .owasp-fill-impact-minimal { background: linear-gradient(90deg, #1565c0, #42a5f5) !important; }
+        .owasp-bar-basis { font-size: 12px; color: #888; margin-top: 6px; line-height: 1.4; }
+        .owasp-findings { margin-bottom: 20px; }
+        .owasp-findings-title { font-weight: 700; font-size: 15px; color: #1a1a2e; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #eee; }
+        .owasp-severity-group { margin-bottom: 10px; }
+        .owasp-severity-header { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; font-weight: 600; }
+        .owasp-sev-badge { padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+        .sev-bg-critical { background: #b71c1c; color: white; }
+        .sev-bg-high { background: #e65100; color: white; }
+        .sev-bg-medium { background: #f9a825; color: #333; }
+        .sev-bg-low { background: #1565c0; color: white; }
+        .owasp-severity-list { padding-left: 16px; }
+        .owasp-finding-item { padding: 4px 0; font-size: 13px; display: flex; gap: 8px; align-items: baseline; }
+        .owasp-finding-feature { font-family: monospace; font-weight: 700; color: #555; white-space: nowrap; font-size: 12px; }
+        .owasp-finding-desc { color: #444; }
+        .owasp-no-findings { text-align: center; color: #2e7d32; padding: 20px; font-size: 14px; font-weight: 600; }
+        .owasp-categories { margin-bottom: 20px; }
+        .owasp-cat-table { margin: 0; }
+        .owasp-cat-table th { width: auto; font-size: 13px; }
+        .owasp-cat-table td { font-size: 13px; vertical-align: top; }
+        .owasp-cat-id { background: #e8eaf6; color: #283593; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+        .owasp-cat-relevance { padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+        .owasp-cat-rel-critical { background: #fdecea; color: #b71c1c; }
+        .owasp-cat-rel-high { background: #fff3e0; color: #e65100; }
+        .owasp-cat-rel-medium { background: #fffde7; color: #f57f17; }
+        .owasp-cat-rel-low { background: #e3f2fd; color: #1565c0; }
+        .tag-owasp { background: #f3e5f5; color: #7b1fa2; border-radius: 4px; font-size: 11px; }
+        .owasp-actions { margin-bottom: 20px; }
+        .owasp-action-list { display: flex; flex-direction: column; gap: 8px; }
+        .owasp-action-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid #ddd; }
+        .owasp-action-item:nth-child(1) { border-left-color: #b71c1c; }
+        .owasp-action-item:nth-child(2) { border-left-color: #e65100; }
+        .owasp-action-item:nth-child(3) { border-left-color: #f57f17; }
+        .owasp-action-item:nth-child(n+4) { border-left-color: #1565c0; }
+        .owasp-action-num { font-weight: 900; color: #999; font-size: 16px; min-width: 20px; text-align: center; padding-top: 1px; }
+        .owasp-action-priority { padding: 3px 8px; border-radius: 4px; font-weight: 800; font-size: 10px; letter-spacing: 0.5px; white-space: nowrap; margin-top: 2px; }
+        .owasp-priority-immediate { background: #b71c1c; color: white; }
+        .owasp-priority-short { background: #e65100; color: white; }
+        .owasp-priority-medium { background: #f57f17; color: white; }
+        .owasp-priority-low { background: #1565c0; color: white; }
+        .owasp-priority-info { background: #757575; color: white; }
+        .owasp-action-content { flex: 1; }
+        .owasp-action-text { font-weight: 600; font-size: 14px; color: #333; }
+        .owasp-action-detail { font-size: 12px; color: #888; margin-top: 2px; }
+        .owasp-compliance { margin-bottom: 0; }
+        .owasp-compliance-table { margin: 0; }
+        .owasp-compliance-table th { font-size: 13px; }
+        .owasp-compliance-table td { font-size: 13px; vertical-align: top; }
+        @media (max-width: 768px) {
+            .model-grid { grid-template-columns: 1fr; }
+            .input-row { flex-direction: column; }
+            .history-toolbar { flex-direction: column; align-items: stretch; }
+            .search-box { max-width: 100%; }
+            .url-cell { max-width: 180px; }
+            .action-btns { flex-direction: column; }
+            .owasp-risk-banner { flex-direction: column; text-align: center; }
+            .owasp-risk-right { text-align: center; }
+            .owasp-indicator-breakdown { justify-content: center; }
+            .owasp-bars { grid-template-columns: 1fr; }
+            .owasp-risk-center { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Phishing Detection Scanner</h1>
+        <p class="subtitle">Analyze URLs using Machine Learning (Random Forest, XGBoost, NLTK)</p>
+
+        <div class="tab-nav">
+            <a href="/" class="tab-btn {{ 'active' if active_tab == 'scan' else '' }}">🔍 Scan URL</a>
+            <a href="/history" class="tab-btn {{ 'active' if active_tab == 'history' else '' }}">
+                📋 History
+                {% if total_scans and total_scans > 0 %}
+                <span class="badge">{{ total_scans }}</span>
+                {% endif %}
+            </a>
+        </div>
+
+        {% if scan_detail and result %}
+        <!--  Scan detail veiw (from history)  -->
+        <a href="/history" class="back-to-history">← Back to History</a>
+
+        {% if result.verdict.verdict == "Phishing" %}
+        <div class="verdict-banner verdict-phishing">
+            WARNING: Phishing URL Detected
+            <div class="verdict-details">Confidence: {{ "%.1f"|format(result.verdict.confidence * 100) }}% | {{ result.verdict.summary }}</div>
+        </div>
+        {% else %}
+        <div class="verdict-banner verdict-legitimate">
+            URL Appears Legitimate
+            <div class="verdict-details">Confidence: {{ "%.1f"|format(result.verdict.confidence * 100) }}% | {{ result.verdict.summary }}</div>
+        </div>
+        {% endif %}
+        <div class="scan-meta">Scanned: {{ result.url }} | Scan completed in {{ result.scan_time }}s{% if result.created_at %} | Saved at: {{ result.created_at }}{% endif %}</div>
+
+        {{ owasp_report_section(result)|safe }}
+
+        <div class="section">
+            <div class="section-header">Model Predictions (3 Models - Majority Voting)</div>
+            <div class="section-body">
+                <div class="model-grid">
+                    <div class="model-card {{ 'phishing' if result.predictions.rf_prediction == 'Phishing' else 'legitimate' }}">
+                        <h3>URL Random Forest</h3>
+                        <div class="prediction">{{ result.predictions.rf_prediction }}</div>
+                        <div class="probability">Phishing probability: {{ "%.2f"|format(result.predictions.rf_probability * 100) }}%</div>
+                    </div>
+                    <div class="model-card {{ 'phishing' if result.predictions.xgb_prediction == 'Phishing' else 'legitimate' }}">
+                        <h3>URL XGBoost</h3>
+                        <div class="prediction">{{ result.predictions.xgb_prediction }}</div>
+                        <div class="probability">Phishing probability: {{ "%.2f"|format(result.predictions.xgb_probability * 100) }}%</div>
+                    </div>
+                    <div class="model-card {{ 'phishing' if result.nltk_predictions.nltk_prediction == 'Phishing' else 'legitimate' }}">
+                        <h3>NLTK Random Forest</h3>
+                        <div class="prediction">{{ result.nltk_predictions.nltk_prediction }}</div>
+                        <div class="probability">Phishing probability: {{ "%.2f"|format(result.nltk_predictions.nltk_probability * 100) }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">URL Structure Features</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>Has IP Address</th><td class="{{ 'flag-true' if result.url_features.Has_Ip else 'flag-false' }}">{{ "Yes" if result.url_features.Has_Ip else "No" }}</td></tr>
+                    <tr><th>Has @ Sign</th><td class="{{ 'flag-true' if result.url_features.At_Sign else 'flag-false' }}">{{ "Yes" if result.url_features.At_Sign else "No" }}</td></tr>
+                    <tr><th>URL Length</th><td class="{{ 'flag-true' if result.url_features.Url_Length else 'flag-false' }}">{{ result.url_details.Url_Length }}</td></tr>
+                    <tr><th>Dash in Domain</th><td class="{{ 'flag-true' if result.url_features.Dash_In_Domain else 'flag-false' }}">{{ result.url_details.Dash_In_Domain }}</td></tr>
+                    <tr><th>Sub/Multi-Subdomain</th><td class="{{ 'flag-true' if result.url_features.Sub_Multisub else 'flag-false' }}">{{ result.url_details.Sub_Multisub }}</td></tr>
+                    <tr><th>HTTP (not HTTPS)</th><td class="{{ 'flag-true' if result.url_features.HTTP_HTTPS else 'flag-false' }}">{{ result.url_details.HTTP_HTTPS }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">URL Path & Query Analysis</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>URL Shortener</th><td class="{{ 'flag-true' if result.url_features.URL_Short else 'flag-false' }}">{{ result.url_details.URL_Short }}</td></tr>
+                    <tr><th>Free Hosting Domain</th><td class="{{ 'flag-true' if result.url_features.Free_Domain else 'flag-false' }}">{{ result.url_details.Free_Domain }}</td></tr>
+                    <tr><th>Phishing Keywords in Path</th><td class="{{ 'flag-true' if result.url_features.Phish_Keyword else 'flag-false' }}">{% if result.url_features.Phish_Keyword %}{% for kw in result.url_details.Phish_Keyword %}<span class="tag tag-warning">{{ kw }}</span>{% endfor %}{% else %}{{ result.url_details.Phish_Keyword }}{% endif %}</td></tr>
+                    <tr><th>Suspicious File Extension</th><td class="{{ 'flag-true' if result.url_features.File_Extension else 'flag-false' }}">{% if result.url_features.File_Extension %}{% for ext in result.url_details.File_Extension %}<span class="tag tag-warning">{{ ext }}</span>{% endfor %}{% else %}{{ result.url_details.File_Extension }}{% endif %}</td></tr>
+                    <tr><th>Suspicious Path Segments</th><td class="{{ 'flag-true' if result.url_features.Segment else 'flag-false' }}">{% if result.url_features.Segment %}{% for seg in result.url_details.Segment %}<span class="tag tag-warning">{{ seg }}</span>{% endfor %}{% else %}{{ result.url_details.Segment }}{% endif %}</td></tr>
+                    <tr><th>Excessive Digits</th><td class="{{ 'flag-true' if result.url_features.Digits else 'flag-false' }}">{{ result.url_details.Digits }}</td></tr>
+                    <tr><th>Suspicious Query Parameters</th><td class="{{ 'flag-true' if result.url_features.Query else 'flag-false' }}">{% if result.url_features.Query %}{% for q in result.url_details.Query %}<span class="tag tag-warning">{{ q }}</span>{% endfor %}{% else %}{{ result.url_details.Query }}{% endif %}</td></tr>
+                    <tr><th>Path Depth</th><td>{{ result.url_details.Depth_Segments }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">SSL Certificate Analysis</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>Uses HTTPS</th><td class="{{ 'flag-true' if result.url_features.HTTP_HTTPS else 'flag-false' }}">{{ result.url_details.HTTP_HTTPS }}</td></tr>
+                    <tr><th>No Certificate</th><td class="{{ 'flag-true' if result.url_features.No_Cert else 'flag-false' }}">{{ result.url_details.No_Cert }}</td></tr>
+                    <tr><th>No Issuer Name</th><td class="{{ 'flag-true' if result.url_features.Issuer_Name else 'flag-false' }}">{{ result.url_details.Issuer_Name }}</td></tr>
+                    <tr><th>No Subject Name</th><td class="{{ 'flag-true' if result.url_features.Subject_Name else 'flag-false' }}">{{ result.url_details.Subject_Name }}</td></tr>
+                    <tr><th>Self-Signed</th><td class="{{ 'flag-true' if result.url_features.Self_Signed else 'flag-false' }}">{{ result.url_details.Self_Signed }}</td></tr>
+                    <tr><th>Certificate Age (&lt; 7 days)</th><td class="{{ 'flag-true' if result.url_features.Cert_Age_Days else 'flag-false' }}">{{ result.url_details.Cert_Age_Days }}</td></tr>
+                    <tr><th>Certificate Validity (&lt; 14 days)</th><td class="{{ 'flag-true' if result.url_features.Cert_Validity_Days else 'flag-false' }}">{{ result.url_details.Cert_Validity_Days }}</td></tr>
+                    <tr><th>Untrusted CA</th><td class="{{ 'flag-true' if result.url_features.Trusted_Cert else 'flag-false' }}">{{ result.url_details.Trusted_Cert }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">HTML & JavaScript Analysis</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>Page Content Fetched</th><td class="{{ 'flag-true' if result.url_features.No_Soup else 'flag-false' }}">{{ result.url_details.No_Soup }}</td></tr>
+                    <tr><th>Invisible Iframes</th><td class="{{ 'flag-true' if result.url_features.Invisible_Iframe else 'flag-false' }}">{{ result.url_details.Invisible_Iframe }}</td></tr>
+                    <tr><th>Cross-Domain Iframes</th><td class="{{ 'flag-true' if result.url_features.Cross_Domain_Iframe else 'flag-false' }}">{{ result.url_details.Cross_Domain_Iframe }}</td></tr>
+                    <tr><th>Nested Iframes</th><td class="{{ 'flag-true' if result.url_features.Nested_Iframes else 'flag-false' }}">{{ result.url_details.Nested_Iframes }}</td></tr>
+                    <tr><th>Iframes with No Visible Purpose</th><td class="{{ 'flag-true' if result.url_features.No_Visible_Purpose else 'flag-false' }}">{{ result.url_details.No_Visible_Purpose }}</td></tr>
+                    <tr><th>Overlay Behavior</th><td class="{{ 'flag-true' if result.url_features.Overlay_Behavior else 'flag-false' }}">{{ result.url_details.Overlay_Behavior }}</td></tr>
+                    <tr><th>Right-Click Disabled</th><td class="{{ 'flag-true' if result.url_features.Right_Click else 'flag-false' }}">{{ result.url_details.Right_Click }}</td></tr>
+                    <tr><th>Status Bar Manipulation</th><td class="{{ 'flag-true' if result.url_features.Custom_status_bar else 'flag-false' }}">{{ result.url_details.Custom_status_bar }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">DNS & Domain Registration</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>A Record</th><td class="{{ 'flag-true' if result.url_features.A_Record else 'flag-false' }}">{{ result.url_details.A_Record }}</td></tr>
+                    <tr><th>AAAA Record</th><td class="{{ 'flag-true' if result.url_features.AAAA_Record else 'flag-false' }}">{{ result.url_details.AAAA_Record }}</td></tr>
+                    <tr><th>MX Record</th><td class="{{ 'flag-true' if result.url_features.MX_Record else 'flag-false' }}">{{ result.url_details.MX_Record }}</td></tr>
+                    <tr><th>NS Record</th><td class="{{ 'flag-true' if result.url_features.NS_Record else 'flag-false' }}">{{ result.url_details.NS_Record }}</td></tr>
+                    <tr><th>Domain Age (&lt; 7 days)</th><td class="{{ 'flag-true' if result.url_features.Domain_Age else 'flag-false' }}">{{ result.url_details.Domain_Age }}</td></tr>
+                    <tr><th>DNS Domain Age</th><td class="{{ 'flag-true' if result.url_features.DNS_Age_Days else 'flag-false' }}">{{ result.url_details.DNS_Age_Days }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">NLTK Text Analysis (Page Content)</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>URL Length (chars)</th><td>{{ result.nltk_details.url_len }}</td></tr>
+                    <tr><th>Keyword Weight Score</th><td>{{ result.nltk_details.total_weight }}</td></tr>
+                    <tr><th>Weight (log)</th><td>{{ result.nltk_details.total_weight_log }}</td></tr>
+                    <tr><th>Weight (normalized)</th><td>{{ result.nltk_details.total_weight_norm }}</td></tr>
+                    <tr><th>Words Processed</th><td>{{ result.nltk_details.word_count }}</td></tr>
+                    <tr><th>Found Phishing Keywords</th>
+                        <td>
+                            {% if result.nltk_details.found_keywords %}
+                                <table style="margin-top: 4px;">
+                                    <tr style="background: #f8f8f8;"><th style="width:auto">Keyword</th><th style="width:auto">Frequency</th><th style="width:auto">Weight</th><th style="width:auto">Score</th></tr>
+                                    {% for kw in result.nltk_details.found_keywords %}
+                                    <tr><td><span class="tag tag-warning">{{ kw.word }}</span></td><td>{{ kw.frequency }}</td><td>{{ kw.weight }}</td><td>{{ kw.weight_score }}</td></tr>
+                                    {% endfor %}
+                                </table>
+                            {% else %}
+                                <span class="flag-false">No phishing keywords found in page content</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if result.nltk_details.text_preview %}
+                    <tr><th>Page Text Preview</th><td style="font-size: 12px; color: #666; max-width: 600px;">{{ result.nltk_details.text_preview[:200] }}...</td></tr>
+                    {% endif %}
+                    {% if result.nltk_details.error %}
+                    <tr><th>Text Analysis Error</th><td class="flag-true">{{ result.nltk_details.error }}</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">All Feature Values (Raw - for URL ML Models)</div>
+            <div class="section-body">
+                <table>
+                    {% set feature_order = ['Has_Ip', 'At_Sign', 'Url_Length', 'Dash_In_Domain', 'Sub_Multisub', 'HTTP_HTTPS', 'No_Cert', 'Issuer_Name', 'Subject_Name', 'Self_Signed', 'Cert_Age_Days', 'Cert_Validity_Days', 'Trusted_Cert', 'No_Soup', 'Invisible_Iframe', 'Cross_Domain_Iframe', 'Nested_Iframes', 'No_Visible_Purpose', 'Overlay_Behavior', 'A_Record', 'AAAA_Record', 'MX_Record', 'NS_Record', 'DNS_Age_Days', 'URL_Short', 'Free_Domain', 'Phish_Keyword', 'File_Extension', 'Segment', 'Digits', 'Query', 'Depth_Segments', 'Domain_Age', 'Right_Click', 'Custom_status_bar'] %}
+                    {% for feat in feature_order %}
+                    <tr><th>{{ feat }}</th><td class="{{ 'flag-true' if result.url_features[feat] else 'flag-false' }}">{{ 1 if result.url_features[feat] else 0 }}</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        <a href="/history" class="back-to-history" style="display:block; text-align:center; margin-top:20px;">← Back to History</a>
+
+        {% elif active_tab == 'scan' %}
+        <!-- ========== SCAN TAB ========== -->
+        <div class="form-box">
+            <form method="POST" action="/scan">
+                <div class="input-row">
+                    <input type="text" name="url" placeholder="Enter a URL to scan (e.g., https://example.com)" required value="{{ prefill_url if prefill_url else (result.url if result else '') }}">
+                    <button type="submit">Scan URL</button>
+                </div>
+            </form>
+        </div>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if result %}
+        {% if result.verdict.verdict == "Phishing" %}
+        <div class="verdict-banner verdict-phishing">
+            WARNING: Phishing URL Detected
+            <div class="verdict-details">Confidence: {{ "%.1f"|format(result.verdict.confidence * 100) }}% | {{ result.verdict.summary }}</div>
+        </div>
+        {% else %}
+        <div class="verdict-banner verdict-legitimate">
+            URL Appears Legitimate
+            <div class="verdict-details">Confidence: {{ "%.1f"|format(result.verdict.confidence * 100) }}% | {{ result.verdict.summary }}</div>
+        </div>
+        {% endif %}
+        <div class="scan-meta">Scanned: {{ result.url }} | Scan completed in {{ result.scan_time }}s{% if result.created_at %} | Saved at: {{ result.created_at }}{% endif %}</div>
+
+        {{ owasp_report_section(result)|safe }}
+
+        <div class="section">
+            <div class="section-header">Model Predictions (3 Models - Majority Voting)</div>
+            <div class="section-body">
+                <div class="model-grid">
+                    <div class="model-card {{ 'phishing' if result.predictions.rf_prediction == 'Phishing' else 'legitimate' }}">
+                        <h3>URL Random Forest</h3>
+                        <div class="prediction">{{ result.predictions.rf_prediction }}</div>
+                        <div class="probability">Phishing probability: {{ "%.2f"|format(result.predictions.rf_probability * 100) }}%</div>
+                    </div>
+                    <div class="model-card {{ 'phishing' if result.predictions.xgb_prediction == 'Phishing' else 'legitimate' }}">
+                        <h3>URL XGBoost</h3>
+                        <div class="prediction">{{ result.predictions.xgb_prediction }}</div>
+                        <div class="probability">Phishing probability: {{ "%.2f"|format(result.predictions.xgb_probability * 100) }}%</div>
+                    </div>
+                    <div class="model-card {{ 'phishing' if result.nltk_predictions.nltk_prediction == 'Phishing' else 'legitimate' }}">
+                        <h3>NLTK Random Forest</h3>
+                        <div class="prediction">{{ result.nltk_predictions.nltk_prediction }}</div>
+                        <div class="probability">Phishing probability: {{ "%.2f"|format(result.nltk_predictions.nltk_probability * 100) }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">URL Structure Features</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>Has IP Address</th><td class="{{ 'flag-true' if result.url_features.Has_Ip else 'flag-false' }}">{{ "Yes" if result.url_features.Has_Ip else "No" }}</td></tr>
+                    <tr><th>Has @ Sign</th><td class="{{ 'flag-true' if result.url_features.At_Sign else 'flag-false' }}">{{ "Yes" if result.url_features.At_Sign else "No" }}</td></tr>
+                    <tr><th>URL Length</th><td class="{{ 'flag-true' if result.url_features.Url_Length else 'flag-false' }}">{{ result.url_details.Url_Length }}</td></tr>
+                    <tr><th>Dash in Domain</th><td class="{{ 'flag-true' if result.url_features.Dash_In_Domain else 'flag-false' }}">{{ result.url_details.Dash_In_Domain }}</td></tr>
+                    <tr><th>Sub/Multi-Subdomain</th><td class="{{ 'flag-true' if result.url_features.Sub_Multisub else 'flag-false' }}">{{ result.url_details.Sub_Multisub }}</td></tr>
+                    <tr><th>HTTP (not HTTPS)</th><td class="{{ 'flag-true' if result.url_features.HTTP_HTTPS else 'flag-false' }}">{{ result.url_details.HTTP_HTTPS }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">URL Path & Query Analysis</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>URL Shortener</th><td class="{{ 'flag-true' if result.url_features.URL_Short else 'flag-false' }}">{{ result.url_details.URL_Short }}</td></tr>
+                    <tr><th>Free Hosting Domain</th><td class="{{ 'flag-true' if result.url_features.Free_Domain else 'flag-false' }}">{{ result.url_details.Free_Domain }}</td></tr>
+                    <tr><th>Phishing Keywords in Path</th><td class="{{ 'flag-true' if result.url_features.Phish_Keyword else 'flag-false' }}">{% if result.url_features.Phish_Keyword %}{% for kw in result.url_details.Phish_Keyword %}<span class="tag tag-warning">{{ kw }}</span>{% endfor %}{% else %}{{ result.url_details.Phish_Keyword }}{% endif %}</td></tr>
+                    <tr><th>Suspicious File Extension</th><td class="{{ 'flag-true' if result.url_features.File_Extension else 'flag-false' }}">{% if result.url_features.File_Extension %}{% for ext in result.url_details.File_Extension %}<span class="tag tag-warning">{{ ext }}</span>{% endfor %}{% else %}{{ result.url_details.File_Extension }}{% endif %}</td></tr>
+                    <tr><th>Suspicious Path Segments</th><td class="{{ 'flag-true' if result.url_features.Segment else 'flag-false' }}">{% if result.url_features.Segment %}{% for seg in result.url_details.Segment %}<span class="tag tag-warning">{{ seg }}</span>{% endfor %}{% else %}{{ result.url_details.Segment }}{% endif %}</td></tr>
+                    <tr><th>Excessive Digits</th><td class="{{ 'flag-true' if result.url_features.Digits else 'flag-false' }}">{{ result.url_details.Digits }}</td></tr>
+                    <tr><th>Suspicious Query Parameters</th><td class="{{ 'flag-true' if result.url_features.Query else 'flag-false' }}">{% if result.url_features.Query %}{% for q in result.url_details.Query %}<span class="tag tag-warning">{{ q }}</span>{% endfor %}{% else %}{{ result.url_details.Query }}{% endif %}</td></tr>
+                    <tr><th>Path Depth</th><td>{{ result.url_details.Depth_Segments }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">SSL Certificate Analysis</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>Uses HTTPS</th><td class="{{ 'flag-true' if result.url_features.HTTP_HTTPS else 'flag-false' }}">{{ result.url_details.HTTP_HTTPS }}</td></tr>
+                    <tr><th>No Certificate</th><td class="{{ 'flag-true' if result.url_features.No_Cert else 'flag-false' }}">{{ result.url_details.No_Cert }}</td></tr>
+                    <tr><th>No Issuer Name</th><td class="{{ 'flag-true' if result.url_features.Issuer_Name else 'flag-false' }}">{{ result.url_details.Issuer_Name }}</td></tr>
+                    <tr><th>No Subject Name</th><td class="{{ 'flag-true' if result.url_features.Subject_Name else 'flag-false' }}">{{ result.url_details.Subject_Name }}</td></tr>
+                    <tr><th>Self-Signed</th><td class="{{ 'flag-true' if result.url_features.Self_Signed else 'flag-false' }}">{{ result.url_details.Self_Signed }}</td></tr>
+                    <tr><th>Certificate Age (&lt; 7 days)</th><td class="{{ 'flag-true' if result.url_features.Cert_Age_Days else 'flag-false' }}">{{ result.url_details.Cert_Age_Days }}</td></tr>
+                    <tr><th>Certificate Validity (&lt; 14 days)</th><td class="{{ 'flag-true' if result.url_features.Cert_Validity_Days else 'flag-false' }}">{{ result.url_details.Cert_Validity_Days }}</td></tr>
+                    <tr><th>Untrusted CA</th><td class="{{ 'flag-true' if result.url_features.Trusted_Cert else 'flag-false' }}">{{ result.url_details.Trusted_Cert }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">HTML & JavaScript Analysis</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>Page Content Fetched</th><td class="{{ 'flag-true' if result.url_features.No_Soup else 'flag-false' }}">{{ result.url_details.No_Soup }}</td></tr>
+                    <tr><th>Invisible Iframes</th><td class="{{ 'flag-true' if result.url_features.Invisible_Iframe else 'flag-false' }}">{{ result.url_details.Invisible_Iframe }}</td></tr>
+                    <tr><th>Cross-Domain Iframes</th><td class="{{ 'flag-true' if result.url_features.Cross_Domain_Iframe else 'flag-false' }}">{{ result.url_details.Cross_Domain_Iframe }}</td></tr>
+                    <tr><th>Nested Iframes</th><td class="{{ 'flag-true' if result.url_features.Nested_Iframes else 'flag-false' }}">{{ result.url_details.Nested_Iframes }}</td></tr>
+                    <tr><th>Iframes with No Visible Purpose</th><td class="{{ 'flag-true' if result.url_features.No_Visible_Purpose else 'flag-false' }}">{{ result.url_details.No_Visible_Purpose }}</td></tr>
+                    <tr><th>Overlay Behavior</th><td class="{{ 'flag-true' if result.url_features.Overlay_Behavior else 'flag-false' }}">{{ result.url_details.Overlay_Behavior }}</td></tr>
+                    <tr><th>Right-Click Disabled</th><td class="{{ 'flag-true' if result.url_features.Right_Click else 'flag-false' }}">{{ result.url_details.Right_Click }}</td></tr>
+                    <tr><th>Status Bar Manipulation</th><td class="{{ 'flag-true' if result.url_features.Custom_status_bar else 'flag-false' }}">{{ result.url_details.Custom_status_bar }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">DNS & Domain Registration</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>A Record</th><td class="{{ 'flag-true' if result.url_features.A_Record else 'flag-false' }}">{{ result.url_details.A_Record }}</td></tr>
+                    <tr><th>AAAA Record</th><td class="{{ 'flag-true' if result.url_features.AAAA_Record else 'flag-false' }}">{{ result.url_details.AAAA_Record }}</td></tr>
+                    <tr><th>MX Record</th><td class="{{ 'flag-true' if result.url_features.MX_Record else 'flag-false' }}">{{ result.url_details.MX_Record }}</td></tr>
+                    <tr><th>NS Record</th><td class="{{ 'flag-true' if result.url_features.NS_Record else 'flag-false' }}">{{ result.url_details.NS_Record }}</td></tr>
+                    <tr><th>Domain Age (&lt; 7 days)</th><td class="{{ 'flag-true' if result.url_features.Domain_Age else 'flag-false' }}">{{ result.url_details.Domain_Age }}</td></tr>
+                    <tr><th>DNS Domain Age</th><td class="{{ 'flag-true' if result.url_features.DNS_Age_Days else 'flag-false' }}">{{ result.url_details.DNS_Age_Days }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">NLTK Text Analysis (Page Content)</div>
+            <div class="section-body">
+                <table>
+                    <tr><th>URL Length (chars)</th><td>{{ result.nltk_details.url_len }}</td></tr>
+                    <tr><th>Keyword Weight Score</th><td>{{ result.nltk_details.total_weight }}</td></tr>
+                    <tr><th>Weight (log)</th><td>{{ result.nltk_details.total_weight_log }}</td></tr>
+                    <tr><th>Weight (normalized)</th><td>{{ result.nltk_details.total_weight_norm }}</td></tr>
+                    <tr><th>Words Processed</th><td>{{ result.nltk_details.word_count }}</td></tr>
+                    <tr><th>Found Phishing Keywords</th>
+                        <td>
+                            {% if result.nltk_details.found_keywords %}
+                                <table style="margin-top: 4px;">
+                                    <tr style="background: #f8f8f8;"><th style="width:auto">Keyword</th><th style="width:auto">Frequency</th><th style="width:auto">Weight</th><th style="width:auto">Score</th></tr>
+                                    {% for kw in result.nltk_details.found_keywords %}
+                                    <tr><td><span class="tag tag-warning">{{ kw.word }}</span></td><td>{{ kw.frequency }}</td><td>{{ kw.weight }}</td><td>{{ kw.weight_score }}</td></tr>
+                                    {% endfor %}
+                                </table>
+                            {% else %}
+                                <span class="flag-false">No phishing keywords found in page content</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if result.nltk_details.text_preview %}
+                    <tr><th>Page Text Preview</th><td style="font-size: 12px; color: #666; max-width: 600px;">{{ result.nltk_details.text_preview[:200] }}...</td></tr>
+                    {% endif %}
+                    {% if result.nltk_details.error %}
+                    <tr><th>Text Analysis Error</th><td class="flag-true">{{ result.nltk_details.error }}</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">All Feature Values (Raw - for URL ML Models)</div>
+            <div class="section-body">
+                <table>
+                    {% set feature_order = ['Has_Ip', 'At_Sign', 'Url_Length', 'Dash_In_Domain', 'Sub_Multisub', 'HTTP_HTTPS', 'No_Cert', 'Issuer_Name', 'Subject_Name', 'Self_Signed', 'Cert_Age_Days', 'Cert_Validity_Days', 'Trusted_Cert', 'No_Soup', 'Invisible_Iframe', 'Cross_Domain_Iframe', 'Nested_Iframes', 'No_Visible_Purpose', 'Overlay_Behavior', 'A_Record', 'AAAA_Record', 'MX_Record', 'NS_Record', 'DNS_Age_Days', 'URL_Short', 'Free_Domain', 'Phish_Keyword', 'File_Extension', 'Segment', 'Digits', 'Query', 'Depth_Segments', 'Domain_Age', 'Right_Click', 'Custom_status_bar'] %}
+                    {% for feat in feature_order %}
+                    <tr><th>{{ feat }}</th><td class="{{ 'flag-true' if result.url_features[feat] else 'flag-false' }}">{{ 1 if result.url_features[feat] else 0 }}</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% elif active_tab == 'history' %}
+        <!-- History section  -->
+        {% if not history or history|length == 0 %}
+        <div class="empty-state">
+            <div class="icon">📋</div>
+            <p><strong>No scan history yet</strong></p>
+            <p>Scan a URL to see it appear here</p>
+            <a href="/" class="action-btn view" style="margin-top: 20px; padding: 12px 24px; font-size: 14px;">Scan Your First URL</a>
+        </div>
+        {% else %}
+        <div class="history-toolbar">
+            <form action="/history" method="GET" class="search-box">
+                <input type="text" name="search" placeholder="Search URLs..." value="{{ search_query if search_query else '' }}">
+                <button type="submit">Search</button>
+            </form>
+            
+        </div>
+
+        {% if search_query %}
+        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+            Search results for: <strong>"{{ search_query }}"</strong>
+            <a href="/history" style="margin-left: 10px; color: #4a90d9;">✕ Clear search</a>
+        </p>
+        {% endif %}
+
+        <div class="history-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>URL</th>
+                        <th style="width: 140px;">Verdict</th>
+                        <th style="width: 100px;">Confidence</th>
+                        <th style="width: 90px;">Scan Time</th>
+                        <th style="width: 150px;">Date</th>
+                        <th style="width: 90px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for scan in history %}
+                    <tr>
+                        <td>{{ scan.id }}</td>
+                        <td class="url-cell">
+                            <a href="/history/{{ scan.id }}" title="{{ scan.url }}">{{ scan.url }}</a>
+                        </td>
+                        <td>
+                            <span class="verdict-badge {{ 'phishing' if scan.verdict == 'Phishing' else 'legitimate' }}">
+                                {{ scan.verdict }}
+                            </span>
+                            {% if scan.owasp_rating %}
+                            <span class="owasp-history-badge {{ scan.owasp_rating | lower }}">{{ scan.owasp_rating }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ "%.1f"|format(scan.confidence * 100) }}%</td>
+                        <td>{{ scan.scan_time }}s</td>
+                        <td style="font-size: 13px; color: #666;">{{ scan.created_at }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="/history/{{ scan.id }}" class="action-btn view">View</a>
+                                <button onclick="showDeleteConfirm({{ scan.id }}, '{{ scan.url[:50] }}...')" class="action-btn delete">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if current_page > 1 %}
+                <a href="/history?page={{ current_page - 1 }}{% if search_query %}&search={{ search_query }}{% endif %}">&laquo; Prev</a>
+            {% else %}
+                <span class="disabled">&laquo; Prev</span>
+            {% endif %}
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == current_page %}
+                    <span class="active">{{ p }}</span>
+                {% elif p <= 3 or p > total_pages - 3 or (p >= current_page - 1 and p <= current_page + 1) %}
+                    <a href="/history?page={{ p }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ p }}</a>
+                {% elif p == 4 or p == total_pages - 3 %}
+                    <span>...</span>
+                {% endif %}
+            {% endfor %}
+            {% if current_page < total_pages %}
+                <a href="/history?page={{ current_page + 1 }}{% if search_query %}&search={{ search_query }}{% endif %}">Next &raquo;</a>
+            {% else %}
+                <span class="disabled">Next &raquo;</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="pagination-info">
+            Showing {{ ((current_page - 1) * 20) + 1 }}-{% if (current_page * 20) < total_scans %}{{ current_page * 20 }}{% else %}{{ total_scans }}{% endif %} of {{ total_scans }} scans
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <div class="confirm-overlay" id="deleteConfirm">
+        <div class="confirm-dialog">
+            <h3>Delete Scan Record?</h3>
+            <p id="deleteConfirmText">Are you sure you want to delete this scan?</p>
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="hideDeleteConfirm()">Cancel</button>
+                <a href="#" id="deleteConfirmBtn" class="btn-confirm-delete">Delete</a>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        function showDeleteConfirm(id, urlText) {
+            document.getElementById('deleteConfirmText').textContent = 'Are you sure you want to delete the scan for: ' + urlText;
+            document.getElementById('deleteConfirmBtn').href = '/history/' + id + '/delete';
+            document.getElementById('deleteConfirm').classList.add('active');
+        }
+        function hideDeleteConfirm() {
+            document.getElementById('deleteConfirm').classList.remove('active');
+        }
+        function showClearConfirm() {
+            document.getElementById('clearConfirm').classList.add('active');
+        }
+        function hideClearConfirm() {
+            document.getElementById('clearConfirm').classList.remove('active');
+        }
+        document.querySelectorAll('.confirm-overlay').forEach(function(overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) { this.classList.remove('active'); }
+            });
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.confirm-overlay.active').forEach(function(el) {
+                    el.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
