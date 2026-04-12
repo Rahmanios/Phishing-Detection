@@ -3,7 +3,7 @@
 ## Student ID: 13286530
 ## Email: rahmanio@coventry.ac.uk
 
-# FastApi_phishing detector
+# FastApi Phishing Detector
 
 A FastAPI-based phishing detection web app that analyzes submitted URLs with three machine learning models, generates an OWASP-style risk assessment, and stores scan history in SQLite.
 
