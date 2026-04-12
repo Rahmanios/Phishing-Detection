@@ -1,7 +1,7 @@
 # Project Title: A Machine Learning-Based Phishing Detection System Using Random Forest with OWASP-Compliant Web Application
-# Author: Osama Rahmani 
-# Student ID: 13286530
-# Email: rahmanio@coventry.ac.uk
+## Author: Osama Rahmani 
+## Student ID: 13286530
+## Email: rahmanio@coventry.ac.uk
 
 
 # Phishing Detection
